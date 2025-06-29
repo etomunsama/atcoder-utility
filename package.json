@@ -1,0 +1,278 @@
+{
+  "name": "atcoder-utility",
+  "displayName": "Atcoder Utility",
+  "description": "Provides various supports for AtCoder contests in VS Code.",
+  "version": "1.5.0",
+  "publisher": "kousa",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "atcoder-utility-sidebar",
+          "title": "Atcoder-Utility",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "atcoder-utility-sidebar": [
+        {
+          "id": "atcoder-utility-contest-action-view",
+          "name": "Contest Actions",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility-status-view",
+          "name": "My Status",
+          "type": "tree"
+        },
+        {
+          "id": "atcoder-utility-recommend-view",
+          "name": "Recommended Problems",
+          "type": "tree"
+        },
+        {
+          "id": "atcoder-utility-contest-view",
+          "name": "Current Contest",
+          "type": "tree"
+        },
+        {
+          "id": "atcoder-utility-bookmarks-view",
+          "name": "Bookmarks",
+          "type": "tree"
+        },
+        {
+          "id": "atcoder-utility-custom-test-view",
+          "name": "Custom Tests",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility-activity-view",
+          "name": "AC Activity",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility-performance-view",
+          "name": "Live Performance",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility-problem-timer-view",
+          "name": "Problem Timer",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility-random-input-view",
+          "name": "Random Input",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility-fuzzer-view",
+          "name": "Fuzzer",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "atcoder-utility.refresh",
+        "title": "Atcoder-Utility: Refresh All Data"
+      },
+      {
+        "command": "atcoder-utility.openProfilePage",
+        "title": "Atcoder-Utility: Open User Profile"
+      },
+      {
+        "command": "atcoder-utility.addBookmark",
+        "title": "AtCoder-Utility: この問題をブックマークする"
+      },
+      {
+        "command": "atcoder-utility.removeBookmark",
+        "title": "AtCoder-Utility: この問題のブックマークを解除"
+      },
+      {
+        "command": "atcoder-utility.setupContest",
+        "title": "AtCoder-Utility: Contest Setup"
+      },
+      {
+        "command": "atcoder-utility.runTests",
+        "title": "AtCoder-Utility: Run Test Cases"
+      },
+      {
+        "command": "atcoder-utility.bundleFile",
+        "title": "AtCoder-Utility: Merge the current files into one file"
+      },
+      {
+        "command": "atcoder-utility.prepareForSubmission",
+        "title": "AtCoder-Utility: Prepare for submission"
+      },
+      {
+        "command": "atcoder-utility.showProblem",
+        "title": "AtCoder-Utility: Show Problem Statement"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "atcoder-utility.addBookmark",
+          "when": "explorerResourceIsFolder && resourcePath =~ /\\/[a-h]$/",
+          "group": "navigation@1"
+        },
+        {
+          "command": "atcoder-utility.removeBookmark",
+          "when": "explorerResourceIsFolder && resourcePath =~ /\\/[a-h]$/",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "atcoder-utility.removeBookmark",
+          "when": "view == 'atcoder-utility-bookmarks-view' && viewItem == 'bookmarkedProblem'",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Atcoder-Utility",
+      "properties": {
+        "atcoder-utility.userId": {
+          "type": "string",
+          "default": "",
+          "description": "あなたのAtCoderユーザーIDを入力してください。"
+        },
+        "atcoder-utility.aclPath": {
+          "type": "string",
+          "default": "/home/",
+          "description": "AtCoder Library (ACL) のヘッダファイルが含まれるディレクトリへの絶対パスを設定します。(例: /home/user/ac-library)"
+        },
+        "atcoder-utility.templateFilePath": {
+          "type": "string",
+          "default": "",
+          "description": "コンテストセットアップ時にコピーされるテンプレートファイルの絶対パス。例: /home/user/atcoder/template.cpp"
+        },
+        "atcoder-utility.autoTestEngine": {
+          "type": "string",
+          "default": "custom",
+          "description": "ファイル保存時の自動テストで使用するエンジンを選択します。",
+          "enum": [
+            "oj",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "online-judge-tools (oj t) を使用します。設定無しで様々な言語でも動作します。",
+            "拡張機能内蔵の高速なテストエンジンを使用します。デフォルトでは、C++、Python、Java、Rust、C、C#、Ruby、Goに対応しています。  その他の言語は設定することで利用することができます"
+          ]
+        },
+        "atcoder-utility.languageSettings": {
+          "type": "object",
+          "description": "各プログラミング言語のコンパイルおよび実行コマンドを設定します。以下のプレースホルダーが使用できます: {fileName}, {fileBasename}, {fileDir}, {executable}, {className}",
+          "default": {
+            "cpp": {
+              "compile": "g++ -std=c++23 -Wall -O2 {fileName} -o {executable}",
+              "run": "{executable}"
+            },
+            "c": {
+              "compile": "gcc -std=c17 -Wall -O2 {fileName} -o {executable}",
+              "run": "{executable}"
+            },
+            "python": {
+              "compile": null,
+              "run": "python3 {fileName}"
+            },
+            "java": {
+              "compile": "javac {fileName}",
+              "run": "java {className}"
+            },
+            "rust": {
+              "compile": "rustc -O {fileName} -o {executable}",
+              "run": "{executable}"
+            },
+            "csharp": {
+              "compile": "csc -out:{executable}.exe {fileName}",
+              "run": "{executable}.exe"
+            },
+            "ruby": {
+              "compile": null,
+              "run": "ruby {fileName}"
+            },
+            "go": {
+              "compile": null,
+              "run": "go run {fileName}"
+            }
+          }
+        },
+        "atcoder-utility.bundleEngine": {
+          "type": "string",
+          "default": "custom",
+          "description": "提出用コードを生成するバンドルエンジンを選択します。(機能は殆ど同じです)",
+          "enum": [
+            "custom",
+            "oj-bundle"
+          ],
+          "enumDescriptions": [
+            "拡張機能内蔵のバンドル機能を使用します（oj-tools不要）。",
+            "online-judge-tools (oj-bundle) を呼び出します（要インストール）。"
+          ]
+        },
+        "atcoder-utility.autoOpenProblemView": {
+          "type": "boolean",
+          "default": false,
+          "description": "もしオンならプログラムファイル(/abc300/a/min.cppなど)が開かれたときに自動的に問題文を表示します"
+        },
+        "atcoder-utility.snippet.integerType": {
+          "type": "string",
+          "default": "int",
+          "enum": ["int", "long long"],
+          "description": "データ型を指定しない整数の入力スニペットを生成する際の型(C++のみ)"
+        },
+        "atcoder-utility.snippet.arrayStyle": {
+          "type": "string",
+          "default": "vector",
+          "enum": ["vector", "c-style array"],
+          "description": "配列の入力スニペットを生成する際のスタイルを選択します(C++のみ)"
+        },
+        "atcoder-utility.snippet.queryStyle": {
+          "type": "string",
+          "default": "individual_vectors",
+          "enum": ["individual_vectors", "struct"],
+          "enumDescriptions": [
+            "例: vector<int> type(Q), p(Q); vector<string> s(Q);",
+            "例: struct Query { ... }; vector<Query> queries(Q);"
+          ],
+          "description": "クエリ問題の入力スニペットを生成する際のコードスタイルを選択します。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/cheerio": "0.22.35",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "esbuild": "latest",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "axios": "^1.10.0",
+    "cheerio": "0.22.0"
+  }
+}
