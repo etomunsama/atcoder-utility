@@ -76,17 +76,13 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
         // ルート要素の場合のみ子要素を返す
         if (!element) {
             if (!this.currentContestId) {
-                const item = new vscode.TreeItem("コンテストフォルダを開いていません");
-                item.iconPath = new vscode.ThemeIcon('folder');
-                return Promise.resolve([item]);
+                return Promise.resolve([new ContestProblemItem("コンテストフォルダを開いていません", vscode.TreeItemCollapsibleState.None, "", "")]);
             }
 
             const contestProblems = this.problemDataService.contestProblemCache.get(this.currentContestId);
             console.log(`[ContestProvider] contestProblems for ${this.currentContestId}:`, contestProblems);
             if (!contestProblems) {
-                const item = new vscode.TreeItem("問題リストを取得中...");
-                item.iconPath = new vscode.ThemeIcon('sync~spin');
-                return Promise.resolve([item]);
+                return Promise.resolve([new ContestProblemItem("問題リストを取得中...", vscode.TreeItemCollapsibleState.None, "", "")]);
             }
 
             const acSet = new Set(this.userDataService.acProblems.map(p => p.id));

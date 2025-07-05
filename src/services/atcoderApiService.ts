@@ -3,7 +3,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { Contest, Submission, ProblemEntry, ProblemModels, ContestProblem, UserRatingHistoryEntry, ProblemInfo, AcProblem } from '../types';
+import { Contest, Submission, ProblemEntry, ProblemModels, ContestProblem, UserRatingHistoryEntry, ProblemInfo, AcProblem, SampleCase } from '../types';
 
 interface AtCoderSubmission {
     id: number;

@@ -233,19 +233,28 @@
         "atcoder-utility.snippet.integerType": {
           "type": "string",
           "default": "int",
-          "enum": ["int", "long long"],
+          "enum": [
+            "int",
+            "long long"
+          ],
           "description": "データ型を指定しない整数の入力スニペットを生成する際の型(C++のみ)"
         },
         "atcoder-utility.snippet.arrayStyle": {
           "type": "string",
           "default": "vector",
-          "enum": ["vector", "c-style array"],
+          "enum": [
+            "vector",
+            "c-style array"
+          ],
           "description": "配列の入力スニペットを生成する際のスタイルを選択します(C++のみ)"
         },
         "atcoder-utility.snippet.queryStyle": {
           "type": "string",
           "default": "individual_vectors",
-          "enum": ["individual_vectors", "struct"],
+          "enum": [
+            "individual_vectors",
+            "struct"
+          ],
           "enumDescriptions": [
             "例: vector<int> type(Q), p(Q); vector<string> s(Q);",
             "例: struct Query { ... }; vector<Query> queries(Q);"
@@ -259,20 +268,26 @@
     "vscode:prepublish": "node esbuild.js --production",
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "antlr": "java -jar tools/antlr/antlr-4.13.2-complete.jar -Dlanguage=TypeScript -o src/generated-parser/src -listener -visitor src/AtCoderInput.g4",
+    "generate-parser": "npm run antlr",
+    "test-input-parser": "tsc src/parser/testParser.ts --outDir out/ && node out/parser/testParser.js"
   },
   "devDependencies": {
+    "@types/antlr4": "^4.12.0",
     "@types/cheerio": "0.22.35",
-    "@types/node": "20.x",
+    "@types/node": "^20.19.4",
     "@types/vscode": "^1.80.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "esbuild": "latest",
     "eslint": "^8.56.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
+    "antlr4": "^4.12.0",
     "axios": "^1.10.0",
     "cheerio": "0.22.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

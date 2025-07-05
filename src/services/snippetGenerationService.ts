@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as cheerio from 'cheerio';
 import { AtCoderApiService } from './atcoderApiService';
-
-// ... (Type definitions)
+import { VariableInfo } from '../types';
 
 /**
  * 問題文から入力形式を解析し、C++の入力受け取りコードスニペットを生成するサービスです。

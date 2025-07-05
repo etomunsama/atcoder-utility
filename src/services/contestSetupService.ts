@@ -25,18 +25,18 @@ export class ContestSetupService {
             await vscode.workspace.fs.createDirectory(contestDirUri);
 
             for (const task of tasks) {
-                progress.report({ message: `問題 ${task.letter} を処理中...` });
+                progress.report({ message: `問題 ${task.problem_index} を処理中...` });
 
-                const problemDirUri = vscode.Uri.joinPath(contestDirUri, task.letter.toLowerCase());
+                const problemDirUri = vscode.Uri.joinPath(contestDirUri, task.problem_index.toLowerCase());
                 await vscode.workspace.fs.createDirectory(problemDirUri);
                 
                 const testDirUri = vscode.Uri.joinPath(problemDirUri, 'test');
                 await vscode.workspace.fs.createDirectory(testDirUri);
 
-                const samples = await getSampleCases(contestId, task.taskId);
-                console.log(`[ContestSetupService] Fetched ${samples.length} samples for task ${task.letter} (${task.taskId})`);
+                const samples = await getSampleCases(contestId, task.problem_index);
+                console.log(`[ContestSetupService] Fetched ${samples.length} samples for task ${task.problem_index} (${contestId}_${task.problem_index.toLowerCase()})`);
                 if (samples.length === 0) {
-                    console.warn(`[ContestSetupService] No samples found for ${task.taskId}. Skipping file creation.`);
+                    console.warn(`[ContestSetupService] No samples found for ${task.problem_index}. Skipping file creation.`);
                 }
                 for (let i = 0; i < samples.length; i++) {
                     const sample = samples[i];

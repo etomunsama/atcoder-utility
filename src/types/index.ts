@@ -138,6 +138,23 @@ export interface SampleCase {
 }
 
 /**
+ * 入力変数の情報を表すインターフェース
+ */
+export interface VariableInfo {
+    name: string;
+    type: string; // "int", "string", "number", etc.
+    isArray: boolean;
+    dimensions?: number[]; // For multi-dimensional arrays
+    sizeVariables?: string[]; // Variables used for array sizes (e.g., N, M)
+    isQuery?: boolean; // For query problems
+    queryDetails?: {
+        countVar: string;
+        typeVar?: string;
+        vars: VariableInfo[];
+    };
+}
+
+/**
  * アクティビティビューで表示する期間の型
  */
 export type TimeRange = '1week' | '1month' | '3months' | '6months';
