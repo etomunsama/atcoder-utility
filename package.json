@@ -271,7 +271,7 @@
     "lint": "eslint src",
     "antlr": "java -jar tools/antlr/antlr-4.13.2-complete.jar -Dlanguage=TypeScript -o src/generated-parser/src -listener -visitor src/AtCoderInput.g4",
     "generate-parser": "npm run antlr",
-    "test-input-parser": "tsc src/parser/testParser.ts --outDir out/ && node out/parser/testParser.js"
+    "test-input-parser": "tsc src/parser/setupTestMocks.ts src/parser/testParser.ts src/services/inputParserService.ts src/services/jsonParserService.ts --outDir out/ && node --require $(pwd)/out/parser/setupTestMocks.js $(pwd)/out/parser/testParser.js"
   },
   "devDependencies": {
     "@types/antlr4": "^4.12.0",
@@ -280,6 +280,7 @@
     "@types/vscode": "^1.80.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "clipboardy": "^4.0.0",
     "esbuild": "latest",
     "eslint": "^8.56.0",
     "typescript": "^5.8.3"

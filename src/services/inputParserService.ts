@@ -89,6 +89,17 @@ export class InputParserService {
         };
         let currentParseContext: 'global' | 'query_definition_section' | 'multi_line_array_definition' = 'global'; 
 
+        const inferInitialDataType = (name: string): string => {
+            if (['N', 'M', 'K', 'n', 'm', 'k'].includes(name)) { // N, M, K などは int/number
+                return 'int';
+            }
+            if (['S', 'T', 's', 't'].includes(name)) { // S, T などは string
+                return 'string';
+            }
+            // その他のケース（A, B, p など）は unknown のまま、または後で推論
+            return 'int';
+        };
+
         for (state.currentLineIndex = 0; state.currentLineIndex < lines.length; state.currentLineIndex++) {
             const line = lines[state.currentLineIndex];
             this.outputChannel.appendLine(`\nProcessing line ${state.currentLineIndex + 1}: '${line}'`);
@@ -114,7 +125,7 @@ export class InputParserService {
             const queryTypeMatch = line.match(/^([0-9]+)( ([A-Za-z_][A-Za-z0-9_]*))*$/);
             if (queryTypeMatch && currentParseContext === 'query_definition_section') {
                 const typeId = parseInt(queryTypeMatch[1], 10);
-                const params: QueryParam[] = queryTypeMatch[0].split(' ').slice(1).map(s => s.trim()).filter(s => s.length > 0).map(pName => ({ name: pName, dataType: 'unknown' }));
+                const params: QueryParam[] = queryTypeMatch[0].split(' ').slice(1).map(s => s.trim()).filter(s => s.length > 0).map(pName => ({ name: pName, dataType: inferInitialDataType(pName) }));
                 this.outputChannel.appendLine(`  Detected query type ${typeId}: Params=${params.map(p=>p.name).join(', ')}`);
                 
                 let queryBlock: QueryBlock | undefined = inputBlocks.find((b): b is QueryBlock => b.type === 'queryBlock'); 
@@ -234,7 +245,7 @@ export class InputParserService {
 
                 const arrayVar: ArrayVariable = {
                     name: arrayBaseName,
-                    dataType: 'unknown',
+                    dataType: inferInitialDataType(arrayBaseName),
                     dimensions: [1],
                     sizeVariables: sizeVar ? [sizeVar] : [],
                     isMultiColumn: false,
@@ -261,7 +272,7 @@ export class InputParserService {
                 const namesInLine = multiVariableIndexedLineMatch[0].split(' ').map(s => s.trim()).filter(s => s.length > 0);
                 const arrayVars: ArrayVariable[] = namesInLine.map(n => ({
                     name: n.split('_')[0],
-                    dataType: 'unknown',
+                    dataType: inferInitialDataType(n.split('_')[0]),
                     dimensions: [1],
                     sizeVariables: [], 
                     isMultiColumn: true,
@@ -327,7 +338,7 @@ export class InputParserService {
             if (simpleVarMatch) {
                 const names = simpleVarMatch[0].split(' ').map(s => s.trim()).filter(s => s.length > 0);
                 this.outputChannel.appendLine(`  Detected simple variable line: ${names.join(', ')}`);
-                const normalVars: NormalVariable[] = names.map(name => ({ name, dataType: 'unknown', isInline: names.length > 1 }));
+                const normalVars: NormalVariable[] = names.map(name => ({ name, dataType: inferInitialDataType(name), isInline: names.length > 1 }));
 
                 let globalBlock: GlobalVariablesBlock | undefined = inputBlocks.slice().reverse().find((b): b is GlobalVariablesBlock => b.type === 'globalVariables'); 
                 if (!globalBlock) {
@@ -353,6 +364,21 @@ export class InputParserService {
         }
 
         this.outputChannel.appendLine("Parsing completed. Extracted InputBlocks:\n" + JSON.stringify(inputBlocks, null, 2));
+
+        const finalQueryDefinitions: Map<number, string[]> = new Map();
+
+        // inputBlocks から finalQueryDefinitions を集約
+        inputBlocks.forEach(block => {
+            if (block.type === 'queryBlock') {
+                const queryBlock = block as QueryBlock; 
+                if (queryBlock.queryDefinitions && Array.isArray(queryBlock.queryDefinitions)) { 
+                    queryBlock.queryDefinitions.forEach(queryDef => {
+                        finalQueryDefinitions.set(queryDef.typeId, queryDef.params.map(p=>p.name));
+                    });
+                }
+            }
+        });
+
         return { inputBlocks: inputBlocks, globalVars: state.globalVars, queryDefinitions: queryDefinitions };
     }
 
@@ -466,7 +492,7 @@ export class InputParserService {
                         partIndex++;
                     } else {
                         this.outputChannel.appendLine(`  Warning: Not enough values in sample line for globalVar ${v.name}. Remains unknown.`);
-                        v.dataType = 'unknown'; // 値がなければ unknown
+                        this.outputChannel.appendLine(`  Applies type prediction by variable names. If it becomes unknown, please let us know via github issues. LINK: https://github.com/etomunsama/atcoder-utility/issues`);
                     }
                 }
                 currentSampleLineIndex++; // 1行消費

@@ -1,9 +1,7 @@
-import { InputParserService } from '../services/inputParserService';
-import * as cheerio from 'cheerio'; // <var>タグ削除用 (InputParserService が使用)
-import { InputBlock } from '../types/InputBlock';
-import { VariableInfo } from '../types';
+import { CppCodeGeneratorService } from '../services/jsonParserService'; 
 
-
+// ★★★ ここはそのまま。ただし、vscode モックはsetupTestMocks.tsで提供されることを想定 ★★★
+// dummyOutputChannel は、inputParserService より前に定義する必要がある
 const dummyOutputChannel = {
     appendLine: (message: string) => console.log(`[Parser Test] ${message}`),
     clear: () => console.log("[Parser Test] Output cleared."),
@@ -11,11 +9,30 @@ const dummyOutputChannel = {
     dispose: () => {}
 };
 
+// config オブジェクトは getConfiguration が返すダミーとして使用される
+// @ts-ignore // vscode の型解決を無視
+const mockConfig = { 
+    get<T>(key: string): T | undefined {
+        if (key === 'atcoder-utility.cpp.integerType') return 'long long' as T;
+        if (key === 'atcoder-utility.cpp.arrayStyle') return 'vector' as T;
+        return undefined;
+    }
+}; 
+
+
+import { InputParserService } from '../services/inputParserService'; 
+import * as cheerio from 'cheerio'; 
+import { InputBlock } from '../types/InputBlock'; 
+import { VariableInfo } from '../types/index'; 
+
+
 // InputParserService のインスタンスを作成
 const inputParserService = new InputParserService(dummyOutputChannel);
+// CppCodeGeneratorService のインスタンスを作成
+const cppCodeGeneratorService = new CppCodeGeneratorService(); 
 
-// テストケースの定義
-// 各テストケースは inputHtml (問題文のHTMLスニペット) と sampleInput (対応するサンプル入力) を持つ
+
+
 const testCases = [
     { 
       name: "Test Case 1 (N)", 
@@ -49,36 +66,37 @@ const testCases = [
     },
 ];
 
-// 各テストケースをループして実行
-testCases.forEach(testCase => {
+testCases.forEach(async testCase => { 
     console.log(`\n--- Running ${testCase.name} ---`);
-    console.log("Input HTML:", testCase.inputHtml.substring(0, 100) + "...");
+    //console.log("Input HTML:", testCase.inputHtml.substring(0, 100) + "...");
 
     try {
-        // 1. inputParserService で HTML から InputBlock と globalVars, queryDefinitions を抽出
-        // ★★★ ここを修正：parseResult の型を明示的に指定する ★★★
-        const parseResult: { 
-            inputBlocks: InputBlock[], 
-            globalVars: Map<string, number | string>, 
-            queryDefinitions: Map<number, string[]> 
-        } = inputParserService.parseInputFormat(testCase.inputHtml);
-        
-        const extractedInputBlocks = parseResult.inputBlocks; // InputBlock[] を取得
+        const parseResult = inputParserService.parseInputFormat(testCase.inputHtml);
+        const extractedInputBlocks = parseResult.inputBlocks; 
         const globalVars = parseResult.globalVars;       
         const queryDefinitions = parseResult.queryDefinitions; 
 
-        console.log("Extracted InputBlocks (raw):", extractedInputBlocks);
-        console.log("Extracted Global Vars (raw):", globalVars);
-        console.log("Extracted Query Definitions (raw):", queryDefinitions);
+        //console.log("Extracted InputBlocks (raw):\n", JSON.stringify(extractedInputBlocks, null, 2)); 
+        //console.log("Extracted Global Vars (raw):", globalVars);
+        //console.log("Extracted Query Definitions (raw):", queryDefinitions);
 
-        // 2. サンプル入力を使って型推論
         const finalInferredBlocks = inputParserService.inferDataTypes(
-            extractedInputBlocks, // InputBlock[] を渡す
+            extractedInputBlocks,
             testCase.sampleInput,
             globalVars,
             queryDefinitions
         );
-        console.log("Final Inferred Blocks (with types):", finalInferredBlocks);
+        //console.log("Final Inferred Blocks (with types):\n", JSON.stringify(finalInferredBlocks, null, 2));
+
+        // config オブジェクトはダミーを作成 (mockConfig をそのまま使用)
+        // ここでの型は vscode.WorkspaceConfiguration ですが、モックなので問題なし
+        
+        const cppSnippet = cppCodeGeneratorService.generateCppSnippet(finalInferredBlocks, mockConfig as any); // ここで any にキャスト
+        
+        // ★★★ クリップボードにコピーする処理をデバッグログに戻す ★★★
+        console.log("\n--- Generated C++ Snippet ---");
+        console.log(cppSnippet); // デバッグログに出力
+        console.log("-----------------------------\n");
 
     } catch (e: any) {
         console.error(`Error processing ${testCase.name}:`, e.message);
