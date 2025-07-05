@@ -237,7 +237,9 @@
             "int",
             "long long"
           ],
-          "description": "データ型を指定しない整数の入力スニペットを生成する際の型(C++のみ)"
+          "description": "データ型を指定しない整数の入力スニペットを生成する際の型(C++のみ)",
+          "scope": "resource",
+          "when": "resourceLangId == cpp"
         },
         "atcoder-utility.snippet.arrayStyle": {
           "type": "string",
@@ -246,7 +248,9 @@
             "vector",
             "c-style array"
           ],
-          "description": "配列の入力スニペットを生成する際のスタイルを選択します(C++のみ)"
+          "description": "配列の入力スニペットを生成する際のスタイルを選択します(C++のみ)",
+          "scope": "resource",
+          "when": "resourceLangId == cpp"
         },
         "atcoder-utility.snippet.queryStyle": {
           "type": "string",
@@ -269,8 +273,6 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "lint": "eslint src",
-    "antlr": "java -jar tools/antlr/antlr-4.13.2-complete.jar -Dlanguage=TypeScript -o src/generated-parser/src -listener -visitor src/AtCoderInput.g4",
-    "generate-parser": "npm run antlr",
     "test-input-parser": "tsc src/parser/setupTestMocks.ts src/parser/testParser.ts src/services/inputParserService.ts src/services/jsonParserService.ts --outDir out/ && node --require $(pwd)/out/parser/setupTestMocks.js $(pwd)/out/parser/testParser.js"
   },
   "devDependencies": {

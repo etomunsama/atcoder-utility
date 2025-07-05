@@ -24,6 +24,8 @@ import { registerDataCommands } from './commands/dataCommands';
 import { registerProblemCommands } from './commands/problemCommands';
 import { registerSubmissionCommands } from './commands/submissionCommands';
 import { registerTestCommands } from './commands/testCommands';
+import { CodeGeneratorService } from './services/jsonParserService';
+import { InputParserService } from './services/inputParserService';
 import { SnippetGenerationService } from './services/snippetGenerationService';
 import { StatusBarService } from './services/statusBarService';
 import { StatusProvider } from './providers/StatusProvider';
@@ -113,7 +115,10 @@ export async function activate(context: vscode.ExtensionContext) {
     bundleService = new BundleService();
     fuzzerService = new FuzzerService(context, testCaseGeneratorService);
     const atcoderApiService = new AtCoderApiService(context);
-    const snippetGenerationService = new SnippetGenerationService(atcoderApiService);
+    const outputChannel = vscode.window.createOutputChannel('AtCoder Utility');
+    const inputParserService = new InputParserService(outputChannel);
+    const codeGeneratorService = new CodeGeneratorService();
+    const snippetGenerationService = new SnippetGenerationService(atcoderApiService, inputParserService, codeGeneratorService);
     const problemViewService = new ProblemViewService(context, atcoderApiService);
     activityViewProvider = new ActivityViewProvider(context.extensionUri ,userDataService);
 

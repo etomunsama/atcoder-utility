@@ -7,13 +7,13 @@ VS Code上でのAtCoderのコンテスト参加と学習を、サポートする
   - 🔵 (75%以上): 自信を持って解ける問題
   - 🟡 (40%以上): ちょうど良い練習になる問題
   - 🔴 (40%未満): 挑戦的な問題
-- **AC状況の表示:** AtCoder Problemsの提出履歴と連携し、すでにAC済みの問題に `✅` マークを表示します。
+- **AC状況の表示:** AtCoder Problemsの提出履歴と連携し、すでにAC済みの問題に ✅ マークを表示します。
 
 - **コンテスト情報の表示:** コンテストフォルダにマウスをホバーすると、正式名称や開催日時をツールチップで表示します。
 
 
 ### 2. サイドバー・ダッシュボード
-アクティビティバーの専用アイコン `Ⓐ` をクリックすると、あなたのAtCoderステータスが一覧表示されます。
+アクティビティバーの専用アイコン Ⓐ をクリックすると、あなたのAtCoderステータスが一覧表示されます。
 - **My Status:**
   - 現在のレーティングと最高レーティング
   - 色と絵文字によるランク表示
@@ -44,7 +44,7 @@ VS Code上でのAtCoderのコンテスト参加と学習を、サポートする
   - 制約を設定すると自動でテストケースを作成します
   - クエリのときの入力はStruct Arrayを選択することで設定できます
 - **Fuzzer**
-  - 設定をRandom Inputの欄で保存することで、愚直解とメインの解法で出力が変わる入力例を見つけます
+  - **設定をRandom Inputの欄で保存する**ことで、愚直解とメインの解法で出力が変わる入力例を見つけます
 
 ### 3. ステータスバー連携
 - **常時レート表示:** `👤 ユーザー名 (⚪ 1985)` のように(⚪には現在の自分の色、1985には現在のレートが入ります)、現在のレーティングを常にステータスバーに表示します。
@@ -56,7 +56,7 @@ VS Code上でのAtCoderのコンテスト参加と学習を、サポートする
 ### 4. 問題文表示
 - ブラウザを使わなくても問題文が表示されるようになります
 - 設定で常に表示するかを選択できます
-- それをするとアクセスをできる限り少なくするため、HTMLファイルが生成されます(不必要であれば、非表示を推奨します)
+- アクセスをできる限り少なくするため、HTMLファイルが生成されます(不必要であれば、非表示を推奨します)
 
 ### 5. 入力予測
 - 問題文から入力を予測することができます(現在はC++のみ)
@@ -74,18 +74,38 @@ Visual Studio Marketplaceから「Atcoder-Utility」をインストールして�
 ### 2. 初期設定
 1. VS Codeの設定 (`settings.json`) を開きます。 (`Ctrl + ,` -> 右上のファイルアイコン)
 
-2. 以下の設定を追加し、あなたのAtCoderユーザーIDを入力してください。
+2. 必須設定
 
-   F1 -> 基本設定: 設定(UI)を開くでも変更することが可能です
+   F1 -> 基本設定: 設定(UI)からでも変更することが可能です
 
    ```json
-   "atcoder-utility.userId": "your_atcoder_id"　//ユーザーのデータ(レートやAC数を取得するために利用します)
-   "atcoder-utility.aclPath": "your_atcoder_library_path"  //C++でコンパイルする際に利用します
-   "atcoder-utility.templateFilePath": "your_template_file_path" //コンテストの準備で使用します　.cppや.pyなどのファイルを記述してください
-   "atcoder-utility.autoTestEngine": "auto_test_engine" //オートテストの機能で使われるエンジンを設定します
-   "atcoder-utility.languageSettings": "settings" //コンパイル、実行するときのコマンドを設定します(C++、Python、Java、Rust、C、C#、Ruby、Goはすでに書かれていますが、書き換えることも可能です)
-   "atcoder-utility.bundleEngine": "bundle_engine" //提出の準備(バンドル & クリップボードにコピー)で使用するエンジンを設定します
-   "atcoder-utility.autoOpenProblemView": false //自動で問題を表示するかを設定します
+   "atcoder-utility.userId": "your_atcoder_id",
+   "atcoder-utility.aclPath": "your_atcoder_library_path",
+   "atcoder-utility.templateFilePath": "your_template_file_path"
+  - userId -> レートやAC確率計算に使用します
+
+  - aclPath -> C++などのコンパイル時に使用します
+
+  - templateFilePath -> コンテストセットアップのときに自動生成されるファイル(.cppや.pyなどのパスを設定)
+
+3. 基本設定
+   F1 -> 基本設定: 設定(UI)からでも変更することが可能です
+   ```json
+   "atcoder-utility.autoTestEngine": "custom",
+   "atcoder-utility.bundleEngine": "custom",
+   "atcoder-utility.languageSettings": {"..."}
+  - autoTestEngine -> 自動テストで使用するエンジン(customは拡張機能内蔵のものでojはonline-judge-toolsのもの)
+  - bundleEngine -> バンドル＆クリップボードにコピーで使うエンジン(autoTestEngineと同様)
+  - languageSettings -> 自動テストで使用するコンパイルコマンド(autoTestEngineでojを設定している際は不要。　C++、Python、Java、Rust、C、C#、Ruby、Goはすでに設定済み(変更も可能))
+
+4. C++のみの設定
+    ```json
+    "atcoder-utility.snippet.arrayStyle": "vector",
+    "atcoder-utility.snippet.integerType": "int",
+    "atcoder-utility.snippet.queryStyle": "individual_vectors"
+  - snippet.arrayStyle -> 入力スニペット生成で使用する配列の種類を選択します(vectorを推奨します)
+  - snippet.integerType -> 入力スニペット生成で使用する整数型の種類を選択します(intかlong long)
+  - snippet.queryStyle -> **現在動作しません。**　変更することは推奨しません(変更しない場合は動作します)
 
 
 ## 依存関係
@@ -118,5 +138,14 @@ This extension is licensed under the MIT License;
 3. Atcoder Problemsのdifficultyを参考にしていますが、負の値になる場合があります
 
 4. 入力予測機能は間違ったコードを生成することがあります
+
+- #### 現在確認されている例
+- 配列のあとに変数があるとき
+- ２次元配列
+- グリッド
+- 複雑なクエリ
+- bool値(現在、stringで反映されるようになっています)
+- char(現在、charのところはstringで反映されます)
+- 小数(動く場合もありますが、とても不安定です)
 
 5. この拡張機能はMITライセンスです

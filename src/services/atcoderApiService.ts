@@ -373,16 +373,23 @@ export async function getSampleCases(contestId: string, problemIndex: string): P
         const $ = cheerio.load(response.data as string);
         const sampleCases: SampleCase[] = [];
 
-        $('h3').each((_i, elem) => {
+        // セレクタをより具体的にし、日本語と英語の両方に対応
+        $('#task-statement').find('h3').each((_i, elem) => {
             const headingText = $(elem).text();
-            if (headingText.includes('Sample Input') || headingText.includes('入力例')) {
+            if (headingText.toLowerCase().startsWith('sample input') || headingText.startsWith('\u5165\u529B\u4F8B')) { // 入力例
                 const input = $(elem).next('pre').text();
-                const output = $(elem).nextAll('h3').filter((_j, nextElem) => $(nextElem).text().includes('Sample Output') || $(nextElem).text().includes('出力例')).first().next('pre').text();
+                const outputElem = $(elem).nextAll('h3').filter((_j, nextElem) => { 
+                    const nextHeading = $(nextElem).text();
+                    return nextHeading.toLowerCase().startsWith('sample output') || nextHeading.startsWith('\u51FA\u529B\u4F8B'); // 出力例
+                }).first();
+                const output = outputElem.next('pre').text();
+                
                 if (input && output) {
                     sampleCases.push({ input, output });
                 }
             }
         });
+
         vscode.window.setStatusBarMessage(`$(check) Sample cases for ${contestId}-${problemIndex} fetched.`, 3000);
         return sampleCases;
     } catch (error: any) {

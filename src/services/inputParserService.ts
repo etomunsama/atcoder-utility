@@ -234,8 +234,8 @@ export class InputParserService {
                 const dotsIndex = parts.indexOf('\\ldots');
                 if (dotsIndex !== -1) {
                     if (dotsIndex + 1 < parts.length) {
-                         const afterDots = parts[dotsIndex + 1];
-                         sizeVar = afterDots.includes('_') ? afterDots.split('_')[1] : afterDots;
+                        const afterDots = parts[dotsIndex + 1];
+                        sizeVar = afterDots.includes('_') ? afterDots.split('_')[1] : afterDots;
                     } else {
                         const precedingGlobalVar = inputBlocks.slice().reverse().find((b): b is GlobalVariablesBlock => b.type === 'globalVariables')?.variables.slice().reverse().find(v => v.name);
                         sizeVar = precedingGlobalVar ? precedingGlobalVar.name : null;
@@ -464,10 +464,10 @@ export class InputParserService {
             if (currentSampleLineIndex >= sampleLines.length) {
                 this.outputChannel.appendLine(`  Skipping block type ${block.type}: No more sample lines available.`);
                 // 残りのブロックの変数も unknown に設定 (もし dataType が unknown のままなら)
-                if (block.type === 'globalVariables') { (block as GlobalVariablesBlock).variables.forEach(v => { if (v.dataType === 'unknown') v.dataType = 'unknown'; }); }
-                else if (block.type === 'simpleInput') { (block as SimpleInputBlock).variables.forEach(v => { if (v.dataType === 'unknown') v.dataType = 'unknown'; }); }
-                else if (block.type === 'arrayBlock') { (block as ArrayBlock).patternLine.variables.forEach(v => { if (v.dataType === 'unknown') v.dataType = 'unknown'; }); }
-                else if (block.type === 'queryBlock') { (block as QueryBlock).queryDefinitions.forEach(qd => qd.params.forEach(p => { if (p.dataType === 'unknown') p.dataType = 'unknown'; })); }
+                if (block.type === 'globalVariables') { (block as GlobalVariablesBlock).variables.forEach(v => { if (v.dataType === 'unknown') {v.dataType = 'unknown';} }); }
+                else if (block.type === 'simpleInput') { (block as SimpleInputBlock).variables.forEach(v => { if (v.dataType === 'unknown') {v.dataType = 'unknown';} }); }
+                else if (block.type === 'arrayBlock') { (block as ArrayBlock).patternLine.variables.forEach(v => { if (v.dataType === 'unknown') {v.dataType = 'unknown';} }); }
+                else if (block.type === 'queryBlock') { (block as QueryBlock).queryDefinitions.forEach(qd => qd.params.forEach(p => { if (p.dataType === 'unknown') {p.dataType = 'unknown';} })); }
                 continue; 
             }
 
@@ -516,7 +516,7 @@ export class InputParserService {
                     this.outputChannel.appendLine(`  Inferred simpleInput variable ${v.name} as ${v.dataType} from value '${val}'.`);
                 } else {
                     this.outputChannel.appendLine(`  Could not infer type for simpleInput block: No value available.`);
-                    if (simpleBlock.variables.length > 0) simpleBlock.variables[0].dataType = 'unknown';
+                    if (simpleBlock.variables.length > 0) {simpleBlock.variables[0].dataType = 'unknown';}
                 }
                 currentSampleLineIndex++; // 1行消費
                 continue; 
@@ -531,7 +531,7 @@ export class InputParserService {
 
                 if (arraySizeVarName && globalVars.has(arraySizeVarName)) {
                     actualArraySize = Number(globalVars.get(arraySizeVarName));
-                    if (isNaN(actualArraySize) || actualArraySize <= 0) actualArraySize = 1;
+                    if (isNaN(actualArraySize) || actualArraySize <= 0) {actualArraySize = 1;}
                 } else {
                     this.outputChannel.appendLine(`  Warning: Array size variable ${arraySizeVarName} value not found in globalVars. Assuming size 1.`);
                     actualArraySize = 1;
