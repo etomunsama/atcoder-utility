@@ -3,7 +3,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { Contest, Submission, ProblemEntry, ProblemModels, ContestProblem, UserRatingHistoryEntry, ProblemInfo, AcProblem, SampleCase } from '../types';
+import { Contest, Submission, ProblemModels, ContestProblem, UserRatingHistoryEntry, AcProblem, SampleCase, Problem } from '../types';
 
 interface AtCoderSubmission {
     id: number;
@@ -47,9 +47,9 @@ export class AtCoderApiService {
     private async getSessionCookie(): Promise<string | undefined> {
         const cookie = await this.context.secrets.get('atcoderSessionCookie');
         if (cookie) {
-            console.log('[AtCoderApiService] Retrieved session cookie from SecretStorage.');
+            //console.log('[AtCoderApiService] Retrieved session cookie from SecretStorage.');
         } else {
-            console.log('[AtCoderApiService] No session cookie found in SecretStorage.');
+            //console.log('[AtCoderApiService] No session cookie found in SecretStorage.');
         }
         return cookie;
     }
@@ -62,7 +62,7 @@ export class AtCoderApiService {
                 headers['Cookie'] = sessionCookie;
             }
         }
-        console.log(`[AtCoderApiService] Sending request to ${url} with headers:`, headers);
+        //console.log(`[AtCoderApiService] Sending request to ${url} with headers:`, headers);
         return axios.get(url, { ...options, headers: headers });
     }
 
@@ -103,13 +103,13 @@ export class AtCoderApiService {
         }
 
         const $ = cheerio.load(htmlContent);
-        console.log('[AtCoderApiService] Cheerio loaded HTML (first 500 chars):', htmlContent.substring(0, 500)); // ★追加ログ
+        //console.log('[AtCoderApiService] Cheerio loaded HTML (first 500 chars):', htmlContent.substring(0, 500)); // ★追加ログ
 
         const sampleCases: SampleCase[] = [];
 
         // サンプル入力/出力のh3タグをすべて取得
         const sampleHeadings = $('div.part section h3');
-        console.log(`[AtCoderApiService] Found ${sampleHeadings.length} h3 elements in sample sections.`); // ★追加ログ
+        //console.log(`[AtCoderApiService] Found ${sampleHeadings.length} h3 elements in sample sections.`); // ★追加ログ
 
         let currentInput: string | null = null;
         let currentOutput: string | null = null;
@@ -120,9 +120,9 @@ export class AtCoderApiService {
             const preElement = $(elem).nextAll('pre').first(); 
             const preText = preElement.text();
 
-            console.log(`[AtCoderApiService] Processing heading: "${headingText}"`); // ★追加ログ
-            console.log(`[AtCoderApiService]   Associated pre element text length: ${preText.length}`); // ★追加ログ
-            console.log(`[AtCoderApiService]   Associated pre element HTML: ${preElement.html()}`); // ★追加ログ
+            //console.log(`[AtCoderApiService] Processing heading: "${headingText}"`); // ★追加ログ
+            //console.log(`[AtCoderApiService]   Associated pre element text length: ${preText.length}`); // ★追加ログ
+            //console.log(`[AtCoderApiService]   Associated pre element HTML: ${preElement.html()}`); // ★追加ログ
 
             if (headingText.startsWith('入力例')) {
                 if (currentInput !== null && currentOutput !== null) {
@@ -144,7 +144,7 @@ export class AtCoderApiService {
             sampleCases.push({ input: currentInput, output: currentOutput });
         }
 
-        console.log(`[AtCoderApiService] Total sample cases extracted: ${sampleCases.length}`); // ★追加ログ
+        //console.log(`[AtCoderApiService] Total sample cases extracted: ${sampleCases.length}`); // ★追加ログ
 
         if (problemUrl) {
             vscode.window.setStatusBarMessage(`$(check) Sample cases for ${contestId}-${problemIndex} fetched.`, 3000);
@@ -195,7 +195,7 @@ export class AtCoderApiService {
      * @param contestId コンテストID
      * @returns 問題リストの配列。取得失敗時は空の配列を返します。
      */
-    public async getProblemListForContest(contestId: string): Promise<ProblemInfo[]> {
+    public async getProblemListForContest(contestId: string): Promise<Problem[]> {
         const apiUrl = `https://kenkoooo.com/atcoder/resources/contest-problem.json`;
         vscode.window.setStatusBarMessage(`$(sync~spin) Fetching problem list for contest ${contestId}...`, 5000);
         try {
@@ -203,16 +203,17 @@ export class AtCoderApiService {
             const allContestProblems: ContestProblem[] = response.data;
             const filteredProblems = allContestProblems.filter(cp => cp.contest_id === contestId);
 
-            // ProblemInfo[] に変換
-            const problemInfos: ProblemInfo[] = filteredProblems.map(cp => ({
+            // Problem[] に変換
+            const problems: Problem[] = filteredProblems.map(cp => ({
+                id: cp.problem_id,
                 contest_id: cp.contest_id,
-                problem_id: cp.problem_id,
-                problem_index: cp.problem_index,
-                // title, point, difficulty は別の場所で補完されることを期待
+                title: '', // title は後で ProblemDataService で補完されることを期待
+                point: null, // point も後で補完されることを期待
+                // difficulty はここでは取得できないため、後でProblemDataServiceで補完されることを期待
             }));
 
             vscode.window.setStatusBarMessage(`$(check) Problem list for contest ${contestId} fetched.`, 3000);
-            return problemInfos;
+            return problems;
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to fetch problem list for contest ${contestId}: ${error.message}.`);
             console.error(`Error fetching problem list for contest ${contestId}:`, error);
@@ -311,6 +312,25 @@ export class AtCoderApiService {
     }
 
     /**
+     * AtCoder Problems APIから指定されたユーザーの全提出履歴をロードします。
+     * @param userId AtCoderのユーザーID。
+     * @returns 提出の配列。取得失敗時は空の配列を返します。
+     */
+    public async loadSubmissions(userId: string): Promise<Submission[]> {
+        const apiUrl = `https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user=${userId}&from_second=0`;
+        vscode.window.setStatusBarMessage(`$(sync~spin) Fetching all submissions for ${userId}...`, 5000);
+        try {
+            const response = await this.axiosGetWithCookie(apiUrl, { timeout: 30000 });
+            vscode.window.setStatusBarMessage(`$(check) All submissions for ${userId} fetched.`, 3000);
+            return response.data;
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to fetch submissions for ${userId}: ${error.message}.`);
+            console.error(`Error fetching submissions for ${userId}:`, error);
+            return [];
+        }
+    }
+
+    /**
      * 指定されたユーザーの現在のAtCoderレーティング履歴をAtCoder Problems APIから取得します。
      * @param userId AtCoderのユーザーID。
      * @returns ユーザーのレーティング履歴の配列。取得失敗時はundefined。
@@ -370,15 +390,15 @@ export class AtCoderApiService {
         try {
             const response = await this.axiosGetWithCookie(userPageUrl, { timeout: 10000 });
             const $ = cheerio.load(response.data);
-            console.log(`[AtCoderApiService] scrapeUserRating: Fetched HTML (first 500 chars): ${response.data.substring(0, 500)}`);
+            //console.log(`[AtCoderApiService] scrapeUserRating: Fetched HTML (first 500 chars): ${response.data.substring(0, 500)}`);
             const history: UserRatingHistoryEntry[] = [];
 
             const rows = $('table.table tbody tr');
-            console.log(`[AtCoderApiService] scrapeUserRating: Found ${rows.length} table rows.`);
+            //console.log(`[AtCoderApiService] scrapeUserRating: Found ${rows.length} table rows.`);
 
             rows.each((_i, elem) => {
                 const columns = $(elem).find('td');
-                console.log(`[AtCoderApiService] scrapeUserRating: Row ${_i} has ${columns.length} columns.`);
+                //console.log(`[AtCoderApiService] scrapeUserRating: Row ${_i} has ${columns.length} columns.`);
                 if (columns.length >= 7) { // 少なくとも7列あることを確認
                     const contestScreenName = $(columns[1]).text().trim();
                     const contestName = $(columns[2]).text().trim();

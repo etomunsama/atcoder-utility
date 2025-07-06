@@ -33,7 +33,11 @@ import { TestCaseGeneratorService } from './services/testCaseGeneratorService';
 import { TestRunnerService } from './services/testRunnerService';
 import { UpdateManagerService } from './services/updateManagerService';
 import { UserDataService } from './services/userDataService';
+import { VirtualContestService } from './services/virtualContestService';
 import { ActivityViewProvider } from './providers/ActivityViewProvider';
+import { VirtualContestProvider } from './providers/VirtualContestProvider';
+import { VirtualContestSetupViewProvider } from './providers/VirtualContestSetupViewProvider';
+import { registerVirtualContestCommands } from './commands/virtualContestCommands';
 
 // =============================================================================
 // グローバル変数
@@ -87,16 +91,6 @@ export function getProblemIdFromUri(uri: vscode.Uri): string | undefined {
 }
 
 /**
- * レーティングと難易度から勝率を計算します。
- * @param rating ユーザーのレーティング
- * @param difficulty 問題の難易度
- * @returns 勝率 (0.0 ~ 1.0)
- */
-export function calculateWinProbability(rating: number, difficulty: number): number {
-    return 1.0 / (1.0 + Math.pow(10, (difficulty - rating) / 400.0));
-}
-
-/**
  * 拡張機能が有効化されたときに実行されるメイン関数です。
  * @param context 拡張機能のコンテキスト
  */
@@ -120,7 +114,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const codeGeneratorService = new CodeGeneratorService();
     const snippetGenerationService = new SnippetGenerationService(atcoderApiService, inputParserService, codeGeneratorService, problemDataService);
     const problemViewService = new ProblemViewService(context, atcoderApiService, problemDataService);
+    const virtualContestService = new VirtualContestService(problemDataService, userDataService, contestSetupService, statusBarService);
     activityViewProvider = new ActivityViewProvider(context.extensionUri ,userDataService);
+    const virtualContestSetupViewProvider = new VirtualContestSetupViewProvider(context.extensionUri);
+    const virtualContestProvider = new VirtualContestProvider(context.extensionUri, virtualContestService, statusBarService);
 
     // --- 1. UIプロバイダーのインスタンス化 ---
     // サイドバーやWebviewなどのUIコンポーネントを初期化します。
@@ -162,7 +159,9 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.registerWebviewViewProvider(RandomInputViewProvider.viewType, randomInputProvider),
         vscode.window.registerWebviewViewProvider(FuzzerViewProvider.viewType, fuzzerProvider),
         vscode.window.registerWebviewViewProvider(ContestActionViewProvider.viewType, contestActionViewProvider),
-        vscode.window.registerWebviewViewProvider(ActivityViewProvider.viewType, activityViewProvider)
+        vscode.window.registerWebviewViewProvider(ActivityViewProvider.viewType, activityViewProvider),
+        vscode.window.registerWebviewViewProvider(VirtualContestSetupViewProvider.viewType, virtualContestSetupViewProvider),
+        vscode.window.registerWebviewViewProvider(VirtualContestProvider.viewType, virtualContestProvider)
     );
 
     // --- 4. 初期データのロードとUIの更新 ---
@@ -186,6 +185,7 @@ export async function activate(context: vscode.ExtensionContext) {
     registerBundleCommands(context, bundleService);
     registerSubmissionCommands(context, bundleService);
     registerProblemCommands(context, problemViewService);
+    registerVirtualContestCommands(context, virtualContestSetupViewProvider);
 
     // --- 6. ライフサイクル管理サービスの起動 ---
     // 定期的なデータ更新などを管理するサービスを起動します。

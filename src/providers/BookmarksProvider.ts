@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ProblemDataService } from '../services/problemDataService';
+import { Problem } from '../types';
 
 /**
  * ブックマークされた問題をツリービューに表示するプロバイダーです。
@@ -27,9 +28,9 @@ export class BookmarksProvider implements vscode.TreeDataProvider<string> {
      */
     getTreeItem(problemId: string): vscode.TreeItem {
         // problemDataServiceのproblemCacheから直接問題情報を取得
-        const problemInfo = this.problemDataService.problemCache.get(problemId);
+        const problem: Problem | undefined = this.problemDataService.problemCache.get(problemId);
 
-        const label = `${problemInfo?.title || problemId} (diff: ${problemInfo?.difficulty || 'N/A'})`;
+        const label = `${problem?.title || problemId} (diff: ${problem?.difficulty || 'N/A'})`;
         const item = new vscode.TreeItem(label);
         item.id = problemId;
         item.contextValue = 'bookmarkedProblem'; // コンテキストメニューの表示に使用

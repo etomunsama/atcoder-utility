@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Contest, ProblemInfo, ContestProblem } from '../types';
+import { Contest, Problem, ContestProblem } from '../types';
 import { AtCoderApiService } from './atcoderApiService';
 
 /**
@@ -12,7 +12,7 @@ export class ProblemDataService {
     /** コンテストIDをキーとしたコンテスト情報のキャッシュ */
     private _contestCache = new Map<string, Contest>();
     /** 問題IDをキーとした問題情報（タイトル、難易度など）のキャッシュ */
-    private _problemCache = new Map<string, ProblemInfo>();
+    private _problemCache = new Map<string, Problem>();
     /** コンテストIDをキーとした、そのコンテストに含まれる問題のリストのキャッシュ */
     private _contestProblemCache = new Map<string, ContestProblem[]>();
 
@@ -39,6 +39,8 @@ export class ProblemDataService {
         if (mergedProblems) {
             for (const problem of mergedProblems) {
                 this._problemCache.set(problem.id, { 
+                    id: problem.id,
+                    contest_id: problem.contest_id,
                     title: problem.title,
                     point: problem.point,
                     difficulty: problemModels?.[problem.id]?.difficulty
@@ -66,7 +68,7 @@ export class ProblemDataService {
     }
 
     /** 問題情報のキャッシュ（読み取り専用） */
-    public get problemCache(): ReadonlyMap<string, ProblemInfo> {
+    public get problemCache(): ReadonlyMap<string, Problem> {
         return this._problemCache;
     }
 
@@ -81,6 +83,16 @@ export class ProblemDataService {
     }
 
     /**
+     * 問題IDから難易度を取得します。
+     * @param problemId 問題ID
+     * @returns 難易度 (数値)。見つからない場合はnull。
+     */
+    public getDifficulty(problemId: string): number | null {
+        const problem = this._problemCache.get(problemId);
+        return problem?.difficulty ?? null;
+    }
+
+    /**
      * ファイルURIから問題IDを抽出します。
      * abc313_ex のような特殊な問題IDも、対応するアルファベット形式に変換します。
      * @param uri 対象のファイルURI
@@ -88,57 +100,57 @@ export class ProblemDataService {
      */
     public getProblemIdFromUri(uri: vscode.Uri): string | undefined {
         const filePath = uri.fsPath;
-        console.log(`[ProblemDataService] getProblemIdFromUri: Processing filePath: ${filePath}`);
+        //console.log(`[ProblemDataService] getProblemIdFromUri: Processing filePath: ${filePath}`);
         const parts = filePath.split('/');
-        console.log(`[ProblemDataService] getProblemIdFromUri: parts: ${JSON.stringify(parts)}`);
+        //console.log(`[ProblemDataService] getProblemIdFromUri: parts: ${JSON.stringify(parts)}`);
         let problemCharCandidate: string | undefined;
         let contestIdCandidate: string | undefined;
 
         const lastPart = parts[parts.length - 1];
         const parentDir = parts[parts.length - 2];
-        console.log(`[ProblemDataService] getProblemIdFromUri: lastPart: ${lastPart}, parentDir: ${parentDir}`);
+        //console.log(`[ProblemDataService] getProblemIdFromUri: lastPart: ${lastPart}, parentDir: ${parentDir}`);
 
         // 形式: .../contest_name/task_letter/main.cpp
         if (parentDir?.match(/^[a-z]$/i) && parts[parts.length - 3]?.match(/^(abc|arc|agc|ahc|adt|adt_intro|tessoku|practice|typical90|dp|abs)\d*$/i)) {
             problemCharCandidate = parentDir.toLowerCase();
             contestIdCandidate = parts[parts.length - 3].toLowerCase();
-            console.log(`[ProblemDataService] getProblemIdFromUri: Matched pattern 1. contestIdCandidate: ${contestIdCandidate}, problemCharCandidate: ${problemCharCandidate}`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: Matched pattern 1. contestIdCandidate: ${contestIdCandidate}, problemCharCandidate: ${problemCharCandidate}`);
         } 
         // 形式: .../contest_name/task_letter (フォルダ自体が問題名)
         else if (lastPart.match(/^[a-z]$/i) && parts[parts.length - 2]?.match(/^(abc|arc|agc|ahc|adt|adt_intro|tessoku|practice|typical90|dp|abs)\d*$/i)) {
             problemCharCandidate = lastPart.toLowerCase();
             contestIdCandidate = parts[parts.length - 2].toLowerCase();
-            console.log(`[ProblemDataService] getProblemIdFromUri: Matched pattern 2. contestIdCandidate: ${contestIdCandidate}, problemCharCandidate: ${problemCharCandidate}`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: Matched pattern 2. contestIdCandidate: ${contestIdCandidate}, problemCharCandidate: ${problemCharCandidate}`);
         }
         // 形式: .../contest_name/task_name (例: abc313_ex)
         else if (lastPart.match(/^[a-z0-9_]+$/i) && parts[parts.length - 2]?.match(/^(abc|arc|agc|ahc|adt|adt_intro|tessoku|practice|typical90|dp|abs)\d*$/i)) {
             problemCharCandidate = lastPart.toLowerCase(); // 例: abc313_ex
             contestIdCandidate = parts[parts.length - 2].toLowerCase();
-            console.log(`[ProblemDataService] getProblemIdFromUri: Matched pattern 3. contestIdCandidate: ${contestIdCandidate}, problemCharCandidate: ${problemCharCandidate}`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: Matched pattern 3. contestIdCandidate: ${contestIdCandidate}, problemCharCandidate: ${problemCharCandidate}`);
         }
 
 
         if (!contestIdCandidate || !problemCharCandidate) {
-            console.log(`[ProblemDataService] getProblemIdFromUri: No valid contestIdCandidate or problemCharCandidate found. Returning undefined.`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: No valid contestIdCandidate or problemCharCandidate found. Returning undefined.`);
             return undefined;
         }
 
         const potentialProblemId = `${contestIdCandidate}_${problemCharCandidate}`;
-        console.log(`[ProblemDataService] getProblemIdFromUri: potentialProblemId: ${potentialProblemId}`);
+        //console.log(`[ProblemDataService] getProblemIdFromUri: potentialProblemId: ${potentialProblemId}`);
         if (this._problemCache.has(potentialProblemId)) {
-            console.log(`[ProblemDataService] getProblemIdFromUri: Found in problemCache directly. Returning ${potentialProblemId}`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: Found in problemCache directly. Returning ${potentialProblemId}`);
             return potentialProblemId;
         }
 
         if (problemCharCandidate.includes('_ex')) {
-            console.log(`[ProblemDataService] getProblemIdFromUri: Handling _ex case.`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: Handling _ex case.`);
             const contestProblems = this._contestProblemCache.get(contestIdCandidate);
-            console.log(`[ProblemDataService] getProblemIdFromUri: contestProblems for ${contestIdCandidate}: ${contestProblems ? contestProblems.length : 0} items.`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: contestProblems for ${contestIdCandidate}: ${contestProblems ? contestProblems.length : 0} items.`);
             if (contestProblems) {
                 for (const cp of contestProblems) {
-                    console.log(`[ProblemDataService] getProblemIdFromUri: Checking contest problem: ${cp.problem_id}, title: ${this._problemCache.get(cp.problem_id)?.title}`);
+                    //console.log(`[ProblemDataService] getProblemIdFromUri: Checking contest problem: ${cp.problem_id}, title: ${this._problemCache.get(cp.problem_id)?.title}`);
                     if (cp.problem_id.startsWith(`${contestIdCandidate}_`) && cp.problem_id.endsWith('_h') && this._problemCache.get(cp.problem_id)?.title.toLowerCase().includes('ex')) {
-                        console.log(`[ProblemDataService] getProblemIdFromUri: Found _ex mapping. Returning ${cp.problem_id}`);
+                        //console.log(`[ProblemDataService] getProblemIdFromUri: Found _ex mapping. Returning ${cp.problem_id}`);
                         return cp.problem_id;
                     }
                 }
@@ -146,28 +158,28 @@ export class ProblemDataService {
         }
         
         if (problemCharCandidate.length === 1 && problemCharCandidate.match(/^[a-z]$/)) {
-            console.log(`[ProblemDataService] getProblemIdFromUri: Handling single char case.`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: Handling single char case.`);
             const newKey = `${contestIdCandidate}_${problemCharCandidate}`;
             const oldKey = `${contestIdCandidate}_${problemCharCandidate.charCodeAt(0) - 'a'.charCodeAt(0) + 1}`;
-            console.log(`[ProblemDataService] getProblemIdFromUri: newKey: ${newKey}, oldKey: ${oldKey}`);
+            //console.log(`[ProblemDataService] getProblemIdFromUri: newKey: ${newKey}, oldKey: ${oldKey}`);
             if (this._problemCache.has(newKey)) {
-                console.log(`[ProblemDataService] getProblemIdFromUri: Found newKey in problemCache. Returning ${newKey}`);
+                //console.log(`[ProblemDataService] getProblemIdFromUri: Found newKey in problemCache. Returning ${newKey}`);
                 return newKey;
             }
             if (this._problemCache.has(oldKey)) {
-                console.log(`[ProblemDataService] getProblemIdFromUri: Found oldKey in problemCache. Returning ${oldKey}`);
+                //console.log(`[ProblemDataService] getProblemIdFromUri: Found oldKey in problemCache. Returning ${oldKey}`);
                 return oldKey;
             }
         }
         
         for (const [problemId, problemInfo] of this._problemCache.entries()) {
             if (problemId.startsWith(`${contestIdCandidate}_`) && problemInfo.title.toLowerCase().includes(problemCharCandidate)) {
-                console.log(`[ProblemDataService] getProblemIdFromUri: Found by title match. Returning ${problemId}`);
+                //console.log(`[ProblemDataService] getProblemIdFromUri: Found by title match. Returning ${problemId}`);
                 return problemId;
             }
         }
 
-        console.log(`[ProblemDataService] getProblemIdFromUri: No problem ID found. Returning undefined.`);
+        //console.log(`[ProblemDataService] getProblemIdFromUri: No problem ID found. Returning undefined.`);
         return undefined;
     }
 }

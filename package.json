@@ -2,7 +2,7 @@
   "name": "atcoder-utility",
   "displayName": "Atcoder Utility",
   "description": "Provides various supports for AtCoder contests in VS Code.",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "publisher": "kousa",
   "license": "MIT",
   "engines": {
@@ -80,6 +80,11 @@
         {
           "id": "atcoder-utility-fuzzer-view",
           "name": "Fuzzer",
+          "type": "webview"
+        },
+        {
+          "id": "atcoder-utility.virtualContest",
+          "name": "Virtual Contest",
           "type": "webview"
         }
       ]

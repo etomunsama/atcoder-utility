@@ -6,12 +6,15 @@ import { UserDataService } from './userDataService';
  * ユーザーのレーティングやテスト結果などを表示します。
  */
 export class StatusBarService implements vscode.Disposable {
-    private statusBarItem: vscode.StatusBarItem;
+    private userStatusItem: vscode.StatusBarItem;
+    private timerStatusItem: vscode.StatusBarItem;
 
     constructor(private userDataService: UserDataService) {
-        this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        this.statusBarItem.text = `$(sync~spin) AtCoder: Loading...`;
-        this.statusBarItem.show();
+        this.userStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+        this.userStatusItem.text = `$(sync~spin) AtCoder: Loading...`;
+        this.userStatusItem.show();
+
+        this.timerStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
     }
 
     /**
@@ -20,7 +23,7 @@ export class StatusBarService implements vscode.Disposable {
      */
     public updateUserStatusBar(userId: string) {
         if (!userId) {
-            this.statusBarItem.hide();
+            this.userStatusItem.hide();
             return;
         }
 
@@ -29,14 +32,27 @@ export class StatusBarService implements vscode.Disposable {
         if (userRatingInfo) {
             const { current, highest } = userRatingInfo;
             const colorInfo = this.userDataService.getRatingInfo(current);
-            this.statusBarItem.text = `$(person) ${userId} (${colorInfo.emoji} ${current})`;
-            this.statusBarItem.tooltip = `現在: ${current}, 最高: ${highest} (${colorInfo.name})`;
-            this.statusBarItem.command = 'atcoder-utility.openProfilePage';
-            this.statusBarItem.show();
+            this.userStatusItem.text = `$(person) ${userId} (${colorInfo.emoji} ${current})`;
+            this.userStatusItem.tooltip = `現在: ${current}, 最高: ${highest} (${colorInfo.name})`;
+            this.userStatusItem.command = 'atcoder-utility.openProfilePage';
+            this.userStatusItem.show();
         } else {
-            this.statusBarItem.text = `$(error) AtCoder: Error`;
-            this.statusBarItem.command = undefined;
-            this.statusBarItem.show();
+            this.userStatusItem.text = `$(error) AtCoder: Error`;
+            this.userStatusItem.command = undefined;
+            this.userStatusItem.show();
+        }
+    }
+
+    /**
+     * バーチャルコンテストのタイマーをステータスバーに表示・更新します。
+     * @param timeString 表示する時間文字列 (例: "VC: 01:23:45")。nullを渡すと非表示になります。
+     */
+    public updateVirtualContestTimer(timeString: string | null) {
+        if (timeString) {
+            this.timerStatusItem.text = `$(watch) ${timeString}`;
+            this.timerStatusItem.show();
+        } else {
+            this.timerStatusItem.hide();
         }
     }
 
@@ -44,6 +60,7 @@ export class StatusBarService implements vscode.Disposable {
      * リソースを解放します。
      */
     public dispose() {
-        this.statusBarItem.dispose();
+        this.userStatusItem.dispose();
+        this.timerStatusItem.dispose();
     }
 }

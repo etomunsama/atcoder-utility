@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ProblemDataService } from '../services/problemDataService';
 import { UserDataService } from '../services/userDataService';
+import { Problem } from '../types';
 
 // TreeViewに表示するアイテムの型を拡張
 class ContestProblemItem extends vscode.TreeItem {
@@ -86,11 +87,11 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
             const acSet = new Set(this.userDataService.acProblems.map(p => p.id));
 
             const items = contestProblems.map(cp => {
-                const problemInfo = this.problemDataService.problemCache.get(cp.problem_id);
+                const problem: Problem | undefined = this.problemDataService.problemCache.get(cp.problem_id);
                 const isAc = acSet.has(cp.problem_id);
                 
-                const label = `${problemInfo?.title || 'Loading...'}`;
-                console.log(`[ContestProvider] Problem ID: ${cp.problem_id}, Problem Info:`, problemInfo, `Label: ${label}`);
+                const label = `${problem?.title || 'Loading...'}`;
+                console.log(`[ContestProvider] Problem ID: ${cp.problem_id}, Problem Info:`, problem, `Label: ${label}`);
                 const item = new ContestProblemItem(
                     label,
                     vscode.TreeItemCollapsibleState.None,
@@ -98,7 +99,7 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
                     cp.contest_id
                 );
                 
-                item.description = `(diff: ${problemInfo?.difficulty ?? 'N/A'})`;
+                item.description = `(diff: ${problem?.difficulty ?? 'N/A'})`;
                 item.iconPath = new vscode.ThemeIcon(isAc ? 'check' : 'circle-outline');
                 
                 return item;

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { calculateWinProbability } from '../extension';
 import { ProblemDataService } from '../services/problemDataService';
 import { UserDataService } from '../services/userDataService';
+import { Problem } from '../types';
 
 /**
  * エクスプローラー上のファイルとフォルダに、AtCoder関連の情報を付与するデコレーションプロバイダーです。
@@ -16,6 +16,16 @@ export class ProblemDecorationProvider implements vscode.FileDecorationProvider 
         private problemDataService: ProblemDataService,
         private userDataService: UserDataService
     ) { }
+
+    /**
+     * レーティングと難易度から勝率を計算します。
+     * @param rating ユーザーのレーティング
+     * @param difficulty 問題の難易度
+     * @returns 勝率 (0.0 ~ 1.0)
+     */
+    private calculateWinProbability(rating: number, difficulty: number): number {
+        return 1.0 / (1.0 + Math.pow(10, (difficulty - rating) / 400.0));
+    }
 
     /**
      * ビューの表示を更新します。
@@ -53,16 +63,16 @@ export class ProblemDecorationProvider implements vscode.FileDecorationProvider 
             return new vscode.FileDecoration('✅', 'Accepted', new vscode.ThemeColor('gitDecoration.ignoredResourceForeground'));
         }
 
-        const problemInfo = this.problemDataService.problemCache.get(problemId);
+        const problem: Problem | undefined = this.problemDataService.problemCache.get(problemId);
         if (!this.userDataService.userRatingInfo) {
             return new vscode.FileDecoration('…', 'ユーザー情報取得中...');
         }
-        if (!problemInfo?.difficulty) {
+        if (!problem?.difficulty) {
             return; // 難易度不明なら何もしない
         }
 
         // 正解確率に基づいて色とバッジを決定
-        const probability = calculateWinProbability(this.userDataService.userRatingInfo.current, problemInfo.difficulty);
+        const probability = this.calculateWinProbability(this.userDataService.userRatingInfo.current, problem.difficulty);
         const probPercent = Math.round(probability * 100);
 
         let badge: string;
@@ -78,7 +88,7 @@ export class ProblemDecorationProvider implements vscode.FileDecorationProvider 
             color = new vscode.ThemeColor('gitDecoration.deletedResourceForeground');
         }
 
-        const tooltip = `正解確率: ${probPercent}% (難易度: ${problemInfo.difficulty})`;
+        const tooltip = `正解確率: ${probPercent}% (難易度: ${problem.difficulty})`;
         return new vscode.FileDecoration(badge, tooltip, color);
     }
 }

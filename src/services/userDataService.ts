@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AcProblem, UserRatingHistoryEntry, Recommendation } from '../types';
+import { AcProblem, UserRatingHistoryEntry, Recommendation, Submission } from '../types';
 import { ProblemDataService } from './problemDataService';
 import { AtCoderApiService } from './atcoderApiService';
 
@@ -10,8 +10,8 @@ import { AtCoderApiService } from './atcoderApiService';
 export class UserDataService {
     /** ユーザーの現在/最高レーティング */
     private _userRatingInfo: { current: number; highest: number; } | null = null;
-    /** ユーザーのAC済み問題リスト */
-    private _acProblems: AcProblem[] = [];
+    /** ユーザーの全提出履歴 */
+    private _submissions: Submission[] = [];
     /** ユーザーのレーティング履歴 */
     private _userRatingHistory: UserRatingHistoryEntry[] = [];
     /** ユーザーへのおすすめ問題リスト */
@@ -28,19 +28,19 @@ export class UserDataService {
         if (!userId) {
             // ユーザーIDがない場合は全データをクリア
             this._userRatingInfo = null;
-            this._acProblems = [];
+            this._submissions = [];
             this._userRatingHistory = [];
             this._recommendedProblems = [];
             return;
         }
 
         // ３つのAPIから並行してデータを取得
-        const [acceptedProblems, userHistory] = await Promise.all([
-            this.atcoderApiService.loadAcceptedProblems(userId), // this.atcoderApiService を使用
-            this.atcoderApiService.scrapeUserRating(userId) // this.atcoderApiService を使用
+        const [submissions, userHistory] = await Promise.all([
+            this.atcoderApiService.loadSubmissions(userId),
+            this.atcoderApiService.scrapeUserRating(userId)
         ]);
 
-        this._acProblems = acceptedProblems || [];
+        this._submissions = submissions || [];
         this._userRatingHistory = userHistory || [];
 
         if (this._userRatingHistory.length > 0) {
@@ -57,7 +57,18 @@ export class UserDataService {
 
     // Getters for private properties (read-only access)
     public get userRatingInfo(): Readonly<{ current: number; highest: number; } | null> { return this._userRatingInfo; }
-    public get acProblems(): ReadonlyArray<AcProblem> { return this._acProblems; }
+    public get acProblems(): ReadonlyArray<AcProblem> { 
+        const acProblems: AcProblem[] = [];
+        const uniqueAcProblems = new Set<string>();
+        for (const sub of this._submissions) {
+            if (sub.result === 'AC' && !uniqueAcProblems.has(sub.problem_id)) {
+                acProblems.push({ id: sub.problem_id, epoch_second: sub.epoch_second });
+                uniqueAcProblems.add(sub.problem_id);
+            }
+        }
+        return acProblems;
+    }
+    public getSubmissions(): ReadonlyArray<Submission> { return this._submissions; }
     public get userRatingHistory(): ReadonlyArray<UserRatingHistoryEntry> { return this._userRatingHistory; }
     public get recommendedProblems(): ReadonlyArray<Recommendation> { return this._recommendedProblems; }
 
@@ -83,9 +94,10 @@ export class UserDataService {
      * @returns 継続日数
      */
     public calculateStreak(): number {
-        if (this._acProblems.length === 0) { return 0; }
+        const acProblems = this.acProblems;
+        if (acProblems.length === 0) { return 0; }
         // ACした日付のSetを作成し、降順にソート
-        const acDates = [...new Set(this._acProblems.map(s => new Date(s.epoch_second * 1000).toLocaleDateString()))]
+        const acDates = [...new Set(acProblems.map(s => new Date(s.epoch_second * 1000).toLocaleDateString()))]
             .map(dateStr => new Date(dateStr))
             .sort((a, b) => b.getTime() - a.getTime());
 
@@ -126,9 +138,10 @@ export class UserDataService {
      */
     public countAcByColor(): Map<string, number> {
         const colorCounts = new Map<string, number>([["赤", 0], ["橙", 0], ["黄", 0], ["青", 0], ["水", 0], ["緑", 0], ["茶", 0], ["灰", 0]]);
-        for (const p of this._acProblems) {
-            if (p.difficulty !== undefined) {
-                const colorName = this.getRatingInfo(p.difficulty).name;
+        for (const p of this.acProblems) {
+            const problemData = this.problemDataService.problemCache.get(p.id);
+            if (problemData && problemData.difficulty !== undefined) {
+                const colorName = this.getRatingInfo(problemData.difficulty).name;
                 if (colorCounts.has(colorName)) {
                     colorCounts.set(colorName, colorCounts.get(colorName)! + 1);
                 }
@@ -147,7 +160,7 @@ export class UserDataService {
         }
         const R = this._userRatingInfo.current;
         const L = 15; // 推薦する問題数
-        const acSet = new Set(this._acProblems.map(p => p.id));
+        const acSet = new Set(this.acProblems.map(p => p.id));
 
         const recs = Array.from(this.problemDataService.problemCache.entries())
             .filter(([id, p]) => p.difficulty && p.difficulty >= R && p.difficulty < R + 200 && !acSet.has(id))

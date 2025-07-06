@@ -48,7 +48,7 @@ export interface Submission {
 /**
  * 問題情報を表すインターフェース (kenkoooo.com API - problems.json)
  */
-export interface ProblemEntry {
+export interface Problem {
     /** 問題ID (例: "abc300_a") */
     id: string;
     /** コンテストID */
@@ -57,6 +57,8 @@ export interface ProblemEntry {
     title: string;
     /** 問題の満点。コンテストによってはnullの場合がある。 */
     point: number | null;
+    /** 推定難易度。存在しない場合はundefined。 */
+    difficulty?: number;
 }
 
 /**
@@ -97,16 +99,6 @@ export interface UserRatingHistoryEntry {
     NewRating: number;
     InnerPerformance: number;
     ContestParticipation: number;
-}
-
-/**
- * 内部で利用する、より詳細な問題情報を表すインターフェース
- */
-export interface ProblemInfo {
-    contest_id?: string;
-    point?: number | null;
-    title?: string;
-    difficulty?: number;
 }
 
 /**
