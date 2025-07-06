@@ -26,9 +26,8 @@ export class BookmarksProvider implements vscode.TreeDataProvider<string> {
      * @returns 表示するTreeItem
      */
     getTreeItem(problemId: string): vscode.TreeItem {
-        // 新旧のID形式に対応するため、両方のキーで問題情報を検索
-        const problemInfo = this.problemDataService.problemCache.get(problemId) ||
-            this.problemDataService.problemCache.get(problemId.replace(/_([a-h])$/, `_${problemId.charCodeAt(problemId.length - 1) - 'a'.charCodeAt(0) + 1}`));
+        // problemDataServiceのproblemCacheから直接問題情報を取得
+        const problemInfo = this.problemDataService.problemCache.get(problemId);
 
         const label = `${problemInfo?.title || problemId} (diff: ${problemInfo?.difficulty || 'N/A'})`;
         const item = new vscode.TreeItem(label);
@@ -36,7 +35,7 @@ export class BookmarksProvider implements vscode.TreeDataProvider<string> {
         item.contextValue = 'bookmarkedProblem'; // コンテキストメニューの表示に使用
         item.command = {
             command: 'vscode.open',
-            title: 'Open Problem in Browser',
+            title: 'Open Problem Page',
             arguments: [vscode.Uri.parse(`https://atcoder.jp/contests/${problemId.split('_')[0]}/tasks/${problemId}`)]
         };
         return item;

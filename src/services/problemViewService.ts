@@ -9,7 +9,8 @@ export class ProblemViewService {
     
     constructor(
         private context: vscode.ExtensionContext,
-        private apiService: AtCoderApiService
+        private apiService: AtCoderApiService,
+        private problemDataService: ProblemDataService
     ) {
         this.registerAutoOpenListener();
     }
@@ -49,11 +50,14 @@ export class ProblemViewService {
         const uri = editor.document.uri; 
         if (!this.isProblemFile(uri.fsPath)) return;
         
-        const problemDir = path.dirname(uri.fsPath);
-        const contestId = path.basename(path.dirname(problemDir)).toLowerCase();
-        const taskLetter = path.basename(problemDir).toLowerCase();
-        const taskId = `${contestId}_${taskLetter}`;
-        const problemUrl = `https://atcoder.jp/contests/${contestId}/tasks/${taskId}`;
+        const problemId = this.problemDataService.getProblemIdFromUri(uri);
+        if (!problemId) {
+            vscode.window.showWarningMessage('Could not determine problem ID from file path.');
+            return;
+        }
+
+        const contestId = problemId.split('_')[0];
+
         const column = vscode.window.activeTextEditor ? vscode.ViewColumn.Beside : vscode.ViewColumn.One;
 
         try {
@@ -64,7 +68,7 @@ export class ProblemViewService {
 
             const panel = vscode.window.createWebviewPanel(
                 ProblemViewService.viewType, 
-                `Problem: ${taskLetter.toUpperCase()}`,
+                `Problem: ${problemId.toUpperCase()}`,
                 { viewColumn: column, preserveFocus: preserveFocus },
                 { enableScripts: true }
             );
@@ -75,7 +79,7 @@ export class ProblemViewService {
             }, null, this.context.subscriptions);
             
             // HTML取得はAtCoderApiServiceに集約
-            const rawHtml = await this.apiService.getOrFetchProblemHtml(uri); // uriを直接渡す
+            const rawHtml = await this.apiService.getOrFetchProblemHtml(contestId, problemId, uri.fsPath); // 修正された引数で呼び出し
             if (!rawHtml) { // HTML取得失敗時はエラーメッセージが既に出ている
                 panel.dispose(); // パネルを閉じる
                 return;

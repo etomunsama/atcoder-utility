@@ -31,10 +31,8 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
         private problemDataService: ProblemDataService,
         private userDataService: UserDataService
     ) {
-        // アクティブなエディタが変更されたら、UIを更新する
         vscode.window.onDidChangeActiveTextEditor(() => this.refresh());
-        // 拡張機能起動時に一度実行
-        this.refresh();
+        this.problemDataService.onDidDataLoad(() => this.refresh());
     }
 
     /**
@@ -44,7 +42,6 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
         const previousContestId = this.currentContestId;
         this.updateCurrentContestId();
         
-        // 常にUIを更新通知
         this._onDidChangeTreeData.fire();
     }
 
@@ -56,7 +53,6 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
         if (editor && editor.document.uri.scheme === 'file') {
             const filePath = editor.document.uri.fsPath;
             console.log(`[ContestProvider] Active file path: ${filePath}`);
-            // 例: /path/to/abc300/a/main.cpp -> abc300 を抽出
             const match = filePath.match(/([a-z0-9_]+)\/[a-z0-9_]+\/[^/]+$/i);
             if (match && match[1]) {
                 this.currentContestId = match[1];
@@ -73,15 +69,17 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
     }
 
     getChildren(element?: ContestProblemItem): Thenable<ContestProblemItem[]> {
-        // ルート要素の場合のみ子要素を返す
         if (!element) {
             if (!this.currentContestId) {
                 return Promise.resolve([new ContestProblemItem("コンテストフォルダを開いていません", vscode.TreeItemCollapsibleState.None, "", "")]);
             }
 
-            const contestProblems = this.problemDataService.contestProblemCache.get(this.currentContestId);
+            let contestProblems = this.problemDataService.contestProblemCache.get(this.currentContestId);
             console.log(`[ContestProvider] contestProblems for ${this.currentContestId}:`, contestProblems);
+            
+            // データがundefinedの場合、再ロードを試みる
             if (!contestProblems) {
+                vscode.window.showInformationMessage('コンテスト問題データをロード中です。しばらくお待ちください...');
                 return Promise.resolve([new ContestProblemItem("問題リストを取得中...", vscode.TreeItemCollapsibleState.None, "", "")]);
             }
 
@@ -109,7 +107,6 @@ export class ContestProvider implements vscode.TreeDataProvider<ContestProblemIt
             return Promise.resolve(items);
         }
 
-        // 子要素は存在しない
         return Promise.resolve([]);
     }
 }

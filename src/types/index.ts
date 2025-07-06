@@ -88,18 +88,22 @@ export interface ContestProblem {
  */
 export interface UserRatingHistoryEntry {
     IsRated: boolean;
-    Place: number;
+    StartTime: number; // Unix epoch seconds
+    EndTime: number;   // Unix epoch seconds
+    ContestType: string;
+    ContestScreenName: string;
+    ContestName: string;
     OldRating: number;
     NewRating: number;
-    Performance: number;
-    ContestType: string;
-    EndTime: number;
+    InnerPerformance: number;
+    ContestParticipation: number;
 }
 
 /**
  * 内部で利用する、より詳細な問題情報を表すインターフェース
  */
 export interface ProblemInfo {
+    contest_id?: string;
     point?: number | null;
     title?: string;
     difficulty?: number;
@@ -141,13 +145,13 @@ export interface SampleCase {
  * 入力変数の情報を表すインターフェース
  */
 export interface VariableInfo {
-    name: string;
-    type: string; // "int", "string", "number", etc.
-    isArray: boolean;
-    dimensions?: number[]; // For multi-dimensional arrays
-    sizeVariables?: string[]; // Variables used for array sizes (e.g., N, M)
-    isQuery?: boolean; // For query problems
-    queryDetails?: {
+    name: string; // 変数名
+    type: string; // 型
+    isArray: boolean; // 配列か
+    dimensions?: number[]; // 配列のときの次元
+    sizeVariables?: string[]; // 配列のときのサイズ
+    isQuery?: boolean; // クエリか
+    queryDetails?: { //クエリ情報
         countVar: string;
         typeVar?: string;
         vars: VariableInfo[];

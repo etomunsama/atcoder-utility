@@ -14,7 +14,7 @@
 		],
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true, // ★★★ これが true であることを確認 ★★★
+		"skipLibCheck": true, // これが true であることを確認 
 		"noImplicitAny": false, // もしあればfalseに
 		"strictNullChecks": false, // もしあればfalseに
 		"noPropertyAccessFromIndexSignature": false, // もしあればfalseに

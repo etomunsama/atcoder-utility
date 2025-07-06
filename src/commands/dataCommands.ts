@@ -57,5 +57,31 @@ export function registerDataCommands(
         }
     });
 
-    context.subscriptions.push(refreshCommand, openProfilePageCommand);
+    /**
+     * AtCoderのセッションCookieを設定するコマンド
+     */
+    const setSessionCookieCommand = vscode.commands.registerCommand('atcoder-utility.setSessionCookie', async () => {
+        const sessionCookieInput = await vscode.window.showInputBox({
+            prompt: 'AtCoderのセッションCookie (例: "REVEL_SESSION=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx") を入力してください。',
+            placeHolder: 'REVEL_SESSION=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+            ignoreFocusOut: true // 入力ボックスからフォーカスが外れても閉じない
+        });
+
+        if (sessionCookieInput) {
+            // ユーザーが入力したCookieをそのまま保存
+            await context.secrets.store('atcoderSessionCookie', sessionCookieInput);
+            vscode.window.showInformationMessage('セッションCookieを保存しました。');
+            // Cookieが更新されたので、ユーザーデータを再読み込みしてUIを更新
+            const currentUserId = vscode.workspace.getConfiguration('atcoder-utility').get<string>('userId') || '';
+            if (currentUserId) {
+                await userDataService.loadUserData(currentUserId);
+                statusBarService.updateUserStatusBar(currentUserId);
+                providersToRefresh.forEach(p => p.refresh());
+            }
+        } else {
+            vscode.window.showInformationMessage('セッションCookieの入力がキャンセルされました。');
+        }
+    });
+
+    context.subscriptions.push(refreshCommand, openProfilePageCommand, setSessionCookieCommand);
 }

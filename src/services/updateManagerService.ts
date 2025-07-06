@@ -27,14 +27,7 @@ export class UpdateManagerService implements vscode.Disposable {
             }
         }));
 
-        // 30分ごとにユーザーデータを自動更新
-        const USER_DATA_INTERVAL = 30 * 60 * 1000;
-        this.autoRefreshTimer = setInterval(async () => {
-            const currentUserId = vscode.workspace.getConfiguration('atcoder-utility').get<string>('userId') || '';
-            await this.userDataService.loadUserData(currentUserId);
-            this.statusBarService.updateUserStatusBar(currentUserId);
-            this.providersToRefresh.forEach(p => p.refresh());
-        }, USER_DATA_INTERVAL);
+        
     }
 
     /**

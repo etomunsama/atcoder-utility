@@ -1053,7 +1053,7 @@
 [31m-}[m
 [32m+[m		[32m"esModuleInterop": true,[m
 [32m+[m		[32m"forceConsistentCasingInFileNames": true,[m
-[32m+[m		[32m"skipLibCheck": true, // ★★★ これが true であることを確認 ★★★[m
+[32m+[m		[32m"skipLibCheck": true, //  これが true であることを確認 [m
 [32m+[m		[32m"noImplicitAny": false, // もしあればfalseに[m
 [32m+[m		[32m"strictNullChecks": false, // もしあればfalseに[m
 [32m+[m		[32m"noPropertyAccessFromIndexSignature": false, // もしあればfalseに[m

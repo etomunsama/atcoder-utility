@@ -14,7 +14,7 @@ export class FuzzerService {
     private isFuzzing = false;
     private outputChannel: vscode.OutputChannel;
 
-    // ★ context を受け取るように変更
+    //  context を受け取るように変更
     constructor(
         private context: vscode.ExtensionContext,
         private testCaseGeneratorService: TestCaseGeneratorService
@@ -28,14 +28,14 @@ export class FuzzerService {
         }
     }
 
-    // ★ startメソッドの引数をシンプルに変更
+    //  startメソッドの引数をシンプルに変更
     public async start(settings: { mainSolutionPath: string, bruteSolutionPath: string, trials: number }, webview: vscode.Webview) {
         if (this.isFuzzing) {
             vscode.window.showWarningMessage('Fuzzingは既に実行中です。');
             return;
         }
 
-        // ★ globalStateからランダム入力の設定を取得
+        //  globalStateからランダム入力の設定を取得
         const randomInputSettings = this.context.globalState.get<any[]>('randomInputSettings', []);
         if (randomInputSettings.length === 0) {
             vscode.window.showErrorMessage('先に「Random Input」ビューで制約を設定し、「この制約を保存」ボタンを押してください。');

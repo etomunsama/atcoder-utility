@@ -2,7 +2,7 @@
   "name": "atcoder-utility",
   "displayName": "Atcoder Utility",
   "description": "Provides various supports for AtCoder contests in VS Code.",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "publisher": "kousa",
   "license": "MIT",
   "engines": {
@@ -87,11 +87,11 @@
     "commands": [
       {
         "command": "atcoder-utility.refresh",
-        "title": "Atcoder-Utility: Refresh All Data"
+        "title": "AtCoder-Utility: Refresh All Data"
       },
       {
         "command": "atcoder-utility.openProfilePage",
-        "title": "Atcoder-Utility: Open User Profile"
+        "title": "AtCoder-Utility: Open User Profile"
       },
       {
         "command": "atcoder-utility.addBookmark",
@@ -120,6 +120,10 @@
       {
         "command": "atcoder-utility.showProblem",
         "title": "AtCoder-Utility: Show Problem Statement"
+      },
+      {
+        "command": "atcoder-utility.setSessionCookie",
+        "title": "AtCoder-Utility: Set AtCoder Session Cookie"
       }
     ],
     "menus": {

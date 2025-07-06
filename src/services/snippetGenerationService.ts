@@ -2,15 +2,62 @@ import * as vscode from 'vscode';
 import { AtCoderApiService } from './atcoderApiService';
 import { InputParserService } from './inputParserService';
 import { CodeGeneratorService } from './jsonParserService';
-import { getSampleCases } from './atcoderApiService';
 import * as path from 'path';
+import * as cheerio from 'cheerio'; // cheerioをインポート
 
 export class SnippetGenerationService {
     constructor(
         private atcoderApiService: AtCoderApiService,
         private inputParserService: InputParserService,
-        private codeGeneratorService: CodeGeneratorService
+        private codeGeneratorService: CodeGeneratorService,
+        private problemDataService: ProblemDataService
     ) {}
+
+    // ProblemViewServiceの_getFixedHtmlForWebviewからHTML修正ロジックをコピー
+    private _getFixedHtmlForSnippetGeneration(rawHtml: string): string {
+        const $ = cheerio.load(rawHtml);
+        const baseUrl = 'https://atcoder.jp';
+
+        // 1. すべての相対パスを絶対パスに変換
+        $('link[href], script[src], img[src], a[href]').each((_, el) => {
+            const el$ = $(el);
+            const attr = el$.is('link, a') ? 'href' : 'src';
+            const url = el$.attr(attr);
+            if (url && url.startsWith('/')) { el$.attr(attr, baseUrl + url); }
+        });
+
+        // 2. 不要なモーダルダイアログとヘッダー/フッターを削除 (display: none !important を使用)
+        $('#modal-contest-start, #modal-contest-end').remove();
+        // CSSインジェクションで対応するため、ここではセレクタを定義するだけ
+        // $('body').prepend('<style>#vue-fixed-header, .navbar, .footer, #contest-nav-tabs, #language-selector, a[href="#"], small.text-muted { display: none !important; }</style>');
+
+        // 3. 日本語と英語の間に区切り線を追加 (必要であれば)
+        const japaneseStatement = $('.lang-ja');
+        if (japaneseStatement.length > 0) {
+            const separator = '<hr class="problem-separator">';
+            japaneseStatement.after(separator);
+        }
+
+        // 4. <var>タグの中身をMathJaxで処理できるように変換
+        $('var').each((_, el) => {
+            const el$ = $(el);
+            const text = el$.text().trim();
+            el$.replaceWith(`\\(${text}\\\)`); // MathJaxのインライン数式デリミタ
+        });
+
+        // 5. <pre>タグをスタイル付きの<div>に置換 (MathJaxが<pre>を無視するため)
+        $('pre').each((_, preElement) => {
+            const pre$ = $(preElement);
+            const content = pre$.html() || '';
+            const replacementDiv = $('<div class="pre-replacement"></div>').html(content);
+            pre$.replaceWith(replacementDiv);
+        });
+
+        // MathJaxのスクリプトとカスタムスタイルは、ここでは不要なので追加しない
+        // ProblemViewServiceのWebView側で追加されるため
+
+        return $.html();
+    }
 
     public async generateAndCopy(uri: vscode.Uri): Promise<void> {
         const editor = vscode.window.activeTextEditor;
@@ -19,37 +66,20 @@ export class SnippetGenerationService {
             return;
         }
 
-        const html = await this.atcoderApiService.getOrFetchProblemHtml(uri);
-        if (!html) {
-            vscode.window.showErrorMessage('Failed to get problem HTML.');
+        const problemId = this.problemDataService.getProblemIdFromUri(uri);
+        if (!problemId) {
+            vscode.window.showWarningMessage('Could not determine problem ID from file path.');
             return;
         }
 
-        const parseResult = this.inputParserService.parseInputFormat(html);
-        const { inputBlocks, globalVars, queryDefinitions } = parseResult;
+        const contestId = problemId.split('_')[0];
 
-        const filePath = uri.fsPath;
-        const parts = filePath.split(path.sep);
-        let contestId: string | undefined;
-        let taskLetter: string | undefined;
+        const rawHtml = await this.atcoderApiService.getOrFetchProblemHtml(contestId, problemId, uri.fsPath);
 
-        for (let i = parts.length - 2; i >= 0; i--) {
-            if (parts[i].match(/^(abc|arc|agc|ahc|adt|adt_intro|tessoku|practice|typical90|dp|abs)\d*$/i)) {
-                contestId = parts[i].toLowerCase();
-                taskLetter = parts[i+1].toLowerCase();
-                break;
-            }
-        }
-
-        if (!contestId || !taskLetter) {
-            vscode.window.showWarningMessage('Could not determine contest/task ID from file path.');
-            return;
-        }
-
-        const sampleCases = await getSampleCases(contestId, taskLetter);
+        // 修正済みHTMLからサンプルケースを取得するように変更
+        const sampleCases = await this.atcoderApiService.getSampleCases(fixedHtml);
         if (!sampleCases || sampleCases.length === 0) {
             vscode.window.showWarningMessage('No sample cases found. Snippet generation may be inaccurate.');
-            // サンプルがない場合でも、型推論なしでスニペット生成を試みる
             const config = vscode.workspace.getConfiguration('atcoder-utility');
             const snippet = this.codeGeneratorService.generateSnippet(inputBlocks, config, editor.document.languageId);
             await vscode.env.clipboard.writeText(snippet);
@@ -57,7 +87,6 @@ export class SnippetGenerationService {
             return;
         }
 
-        // 最初のサンプル入力を使用
         const sampleInput = sampleCases[0].input;
 
         const finalInferredBlocks = this.inputParserService.inferDataTypes(
@@ -68,7 +97,7 @@ export class SnippetGenerationService {
         );
 
         const config = vscode.workspace.getConfiguration('atcoder-utility');
-        const snippet = this.codeGeneratorService.generateSnippet(inputBlocks, config, editor.document.languageId);
+        const snippet = this.codeGeneratorService.generateSnippet(finalInferredBlocks, config, editor.document.languageId);
 
         await vscode.env.clipboard.writeText(snippet);
         vscode.window.showInformationMessage('Snippet generated and copied to clipboard!');

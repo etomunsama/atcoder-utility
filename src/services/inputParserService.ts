@@ -47,12 +47,12 @@ export class InputParserService {
 
         const lines = this.preprocessHtml(html); // HTML前処理
 
-        // ★★★ ここを修正：classifyAndExtractPatterns の戻り値を受け取る ★★★
+        //  ここを修正：classifyAndExtractPatterns の戻り値を受け取る 
         const classifiedResult = this.classifyAndExtractPatterns(lines);
         const inputBlocks = classifiedResult.inputBlocks;
         const globalVarsFromClassification = classifiedResult.globalVars; // 名前を変更して区別
         const queryDefinitionsFromClassification = classifiedResult.queryDefinitions; // 名前を変更して区別
-        // ★★★ ここまで修正 ★★★
+        //  ここまで修正 
 
         // classifyAndExtractPatterns の中でログは出力済みなので、ここでは不要
         // this.outputChannel.appendLine("Parsing completed. Extracted InputBlocks:\n" + JSON.stringify(inputBlocks, null, 2));
@@ -130,7 +130,7 @@ export class InputParserService {
                 
                 let queryBlock: QueryBlock | undefined = inputBlocks.find((b): b is QueryBlock => b.type === 'queryBlock'); 
                 if (!queryBlock) { 
-                    queryBlock = { type: 'queryBlock', countVariable: 'Q', queryDefinitions: [] }; // ★★★ ここで [] と初期化済み ★★★
+                    queryBlock = { type: 'queryBlock', countVariable: 'Q', queryDefinitions: [] }; //  ここで [] と初期化済み 
                     inputBlocks.push(queryBlock);
                 }
                 queryBlock.queryDefinitions.push({ typeId, params, exampleLine: line }); 
@@ -147,7 +147,7 @@ export class InputParserService {
             if (latexQueryPlaceholderMatch) {
                 let queryBlock: QueryBlock | undefined = inputBlocks.find((b): b is QueryBlock => b.type === 'queryBlock');
                 if (!queryBlock) {
-                    queryBlock = { type: 'queryBlock', countVariable: 'Q', queryDefinitions: [] }; // ★★★ ここでも初期化を確実にする ★★★
+                    queryBlock = { type: 'queryBlock', countVariable: 'Q', queryDefinitions: [] }; //  ここでも初期化を確実にする 
                     inputBlocks.push(queryBlock);
                 }
                 const queryIndexOrVar = latexQueryPlaceholderMatch[2];
@@ -197,7 +197,7 @@ export class InputParserService {
                 continue;
             }
             
-            // ★★★ ここから修正：A_M B_M のような最終行の処理を、最も優先的に、独立して行う ★★★
+            //  ここから修正：A_M B_M のような最終行の処理を、最も優先的に、独立して行う 
             // 4. \vdots の後で来る最終的な添字付き複数変数行 (A_M B_M) の検出
             // このパターンは multiVariableIndexedLineMatch と同じ正規表現
             const finalIndexedLineMatch = line.match(/^([A-Za-z_][A-Za-z0-9_]*_([0-9A-Za-z_]+))( ([A-Za-z_][A-Za-z0-9_]*_([0-9A-Za-z_]+)))+$/);
@@ -215,10 +215,10 @@ export class InputParserService {
                     this.outputChannel.appendLine(`  Updated ArrayBlock endLineText for final pattern: ${line}.`);
                     state.lastDetectedPattern = 'none'; // 最終行を処理したので、パターンをリセット
                     state.lastDetectedVariables = null;
-                    continue; // ★★★ これが重要：処理したので、必ず次の行へ進む ★★★
+                    continue; //  これが重要：処理したので、必ず次の行へ進む 
                 }
             }
-            // ★★★ ここまで修正した A_M B_M 処理部分 ★★★
+            //  ここまで修正した A_M B_M 処理部分 
 
 
             // 4. 水平方向の配列行 (P_1 P_2 ... P_N)
@@ -279,7 +279,7 @@ export class InputParserService {
                     indexStart: parseInt(n.split('_')[1], 10) || 1
                 }));
 
-                // ★★★ ここを修正：既存の ArrayBlock を更新するロジックを強化 ★★★
+                //  ここを修正：既存の ArrayBlock を更新するロジックを強化 
                 let arrayBlockToUpdate: ArrayBlock | undefined = undefined;
                 
                 // 1. まず、\vdots が既に関連付けられている「完成途中の」ArrayBlock を探す (endLineText 更新のため)
@@ -327,7 +327,7 @@ export class InputParserService {
                 
                 state.lastDetectedPattern = 'array_entry'; 
                 state.lastDetectedVariables = arrayVars.map(v=>v.name);
-                continue; // ★★★ 処理したので、次の行へ進む ★★★
+                continue; //  処理したので、次の行へ進む 
             }
 
             
@@ -403,7 +403,7 @@ export class InputParserService {
                 });
             } else if (block.type === 'queryBlock') {
                 const queryBlock = block as QueryBlock; 
-                // ★★★ ここを修正：queryBlock.queryDefinitions が存在し、かつ配列であることを確認 ★★★
+                //  ここを修正：queryBlock.queryDefinitions が存在し、かつ配列であることを確認 
                 if (queryBlock.queryDefinitions && Array.isArray(queryBlock.queryDefinitions)) { 
                     queryBlock.queryDefinitions.forEach(queryDef => {
                         finalVariables.push({
@@ -411,7 +411,7 @@ export class InputParserService {
                             queryDetails: {
                                 countVar: queryBlock.countVariable,
                                 typeVar: 'type', 
-                                // ★★★ queryDef.params が存在し、かつ配列であることを確認 ★★★
+                                //  queryDef.params が存在し、かつ配列であることを確認 
                                 vars: (queryDef.params && Array.isArray(queryDef.params) ? queryDef.params.map(p => ({ name: p.name, type: p.dataType, isArray: false, isQuery: false })) : [])
                             }
                         });
@@ -617,7 +617,7 @@ export class InputParserService {
                                     const currentResult = allQueryParamInferenceResults.get(definedParamName)!; 
                                     if (currentResult.type === null) {
                                         currentResult.type = currentType;
-                                    } else if (currentResult.type !== currentType) { // ★★★ ここを修正：比較対象を currentType に ★★★
+                                    } else if (currentResult.type !== currentType) { //  ここを修正：比較対象を currentType に 
                                         if (currentResult.type === 'int' && currentType === 'string') { currentResult.type = 'string'; }
                                         else if (currentResult.type === 'double' && currentType === 'string') { currentResult.type = 'string'; }
                                         else if (currentResult.type === 'int' && currentType === 'double') { currentResult.type = 'double'; }

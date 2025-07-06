@@ -84,7 +84,7 @@ export interface TestCaseBlock extends InputBlock {
 
 
 // ParserState インターフェースを更新
-export interface ParserState { // ★★★ export を追加 ★★★
+export interface ParserState { //  export を追加 
     globalVars: Map<string, number | string>;
     currentLineIndex: number;
     // lastDetectedPattern に新しい文字列リテラルを追加

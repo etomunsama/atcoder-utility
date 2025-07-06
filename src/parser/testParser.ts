@@ -1,6 +1,6 @@
 import { CodeGeneratorService } from '../services/jsonParserService'; 
 
-// ★★★ ここはそのまま。ただし、vscode モックはsetupTestMocks.tsで提供されることを想定 ★★★
+// ここはそのまま。ただし、vscode モックはsetupTestMocks.tsで提供されることを想定 
 // dummyOutputChannel は、inputParserService より前に定義する必要がある
 const dummyOutputChannel = {
     appendLine: (message: string) => console.log(`[Parser Test] ${message}`),

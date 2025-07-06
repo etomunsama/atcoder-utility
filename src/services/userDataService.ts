@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { AcProblem, UserRatingHistoryEntry, Recommendation } from '../types';
-import { scrapeUserRating, loadAcceptedProblems, getUserRatingHistory, getCurrentUserRating } from './atcoderApiService';
 import { ProblemDataService } from './problemDataService';
+import { AtCoderApiService } from './atcoderApiService';
 
 /**
  * ログインしているユーザーに特化したデータ（レーティング、AC状況、履歴など）を管理するサービスです。
@@ -17,7 +17,8 @@ export class UserDataService {
     /** ユーザーへのおすすめ問題リスト */
     private _recommendedProblems: Recommendation[] = [];
 
-    constructor(private problemDataService: ProblemDataService) { }
+    // constructorにatcoderApiServiceを追加
+    constructor(private problemDataService: ProblemDataService, private atcoderApiService: AtCoderApiService) { }
 
     /**
      * 指定されたユーザーIDの全データを外部APIからロードし、内部キャッシュを更新します。
@@ -35,8 +36,8 @@ export class UserDataService {
 
         // ３つのAPIから並行してデータを取得
         const [acceptedProblems, userHistory] = await Promise.all([
-            loadAcceptedProblems(userId),
-            getUserRatingHistory(userId)
+            this.atcoderApiService.loadAcceptedProblems(userId), // this.atcoderApiService を使用
+            this.atcoderApiService.scrapeUserRating(userId) // this.atcoderApiService を使用
         ]);
 
         this._acProblems = acceptedProblems || [];

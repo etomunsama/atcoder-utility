@@ -105,21 +105,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // --- 0. サービス層のインスタンス化 ---
     // 拡張機能のコアロジックを提供するサービスを初期化します。
-    problemDataService = new ProblemDataService();
-    userDataService = new UserDataService(problemDataService);
+    const atcoderApiService = new AtCoderApiService(context); // ここでインスタンス化
+    problemDataService = new ProblemDataService(atcoderApiService); // 依存性を注入
+    userDataService = new UserDataService(problemDataService, atcoderApiService); // 依存性を注入
     customTestRunnerService = new CustomTestRunnerService();
     testRunnerService = new TestRunnerService(customTestRunnerService);
     statusBarService = new StatusBarService(userDataService);
     testCaseGeneratorService = new TestCaseGeneratorService();
-    contestSetupService = new ContestSetupService();
+    contestSetupService = new ContestSetupService(atcoderApiService); // 依存性を注入
     bundleService = new BundleService();
     fuzzerService = new FuzzerService(context, testCaseGeneratorService);
-    const atcoderApiService = new AtCoderApiService(context);
     const outputChannel = vscode.window.createOutputChannel('AtCoder Utility');
     const inputParserService = new InputParserService(outputChannel);
     const codeGeneratorService = new CodeGeneratorService();
-    const snippetGenerationService = new SnippetGenerationService(atcoderApiService, inputParserService, codeGeneratorService);
-    const problemViewService = new ProblemViewService(context, atcoderApiService);
+    const snippetGenerationService = new SnippetGenerationService(atcoderApiService, inputParserService, codeGeneratorService, problemDataService);
+    const problemViewService = new ProblemViewService(context, atcoderApiService, problemDataService);
     activityViewProvider = new ActivityViewProvider(context.extensionUri ,userDataService);
 
     // --- 1. UIプロバイダーのインスタンス化 ---

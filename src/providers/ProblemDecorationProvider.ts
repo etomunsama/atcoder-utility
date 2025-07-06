@@ -43,29 +43,10 @@ export class ProblemDecorationProvider implements vscode.FileDecorationProvider 
         }
 
         // --- 問題フォルダ/ファイルのデコレーション ---
-        let problemChar: string | undefined;
-        let contestId: string | undefined;
+        // problemDataServiceのgetProblemIdFromUriを使用して問題IDを特定
+        const problemId = this.problemDataService.getProblemIdFromUri(uri);
 
-        // URIからコンテストIDと問題文字(a, b, ..)を抽出
-        if (lastPart.match(/^[a-h]$/)) {
-            problemChar = lastPart;
-            contestId = parts[parts.length - 2];
-        } else {
-            const parentDir = parts[parts.length - 2];
-            if (parentDir?.match(/^[a-h]$/)) {
-                problemChar = parentDir;
-                contestId = parts[parts.length - 3];
-            } else {
-                return; // 問題フォルダ/ファイルでなければ何もしない
-            }
-        }
-
-        if (!contestId || !problemChar) { return; }
-
-        // 新旧両方の問題ID形式に対応
-        const newKey = `${contestId}_${problemChar}`;
-        const oldKey = `${contestId}_${problemChar.charCodeAt(0) - 'a'.charCodeAt(0) + 1}`;
-        const problemId = this.problemDataService.problemCache.has(newKey) ? newKey : oldKey;
+        if (!problemId) { return; } // 問題IDが特定できなければ何もしない
 
         // AC済みかチェック
         if (this.userDataService.acProblems.some(p => p.id === problemId)) {

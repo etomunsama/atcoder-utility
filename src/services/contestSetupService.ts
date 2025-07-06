@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { getProblemListForContest, getSampleCases } from './atcoderApiService';
+import { AtCoderApiService } from './atcoderApiService';
+import { SampleCase } from '../types';
 
 export class ContestSetupService {
 
-    constructor() {}
+    constructor(private atcoderApiService: AtCoderApiService) {}
 
     public async setupContest(contestId: string, parentDirUri: vscode.Uri) {
         await vscode.window.withProgress({
@@ -14,7 +15,7 @@ export class ContestSetupService {
         }, async (progress) => {
 
             progress.report({ message: '問題リストを取得中...' });
-            const tasks = await getProblemListForContest(contestId);
+            const tasks = await this.atcoderApiService.getProblemListForContest(contestId);
 
             if (!tasks) {
                 vscode.window.showErrorMessage(`コンテスト '${contestId}' の問題リストを取得できませんでした。`);
@@ -33,7 +34,16 @@ export class ContestSetupService {
                 const testDirUri = vscode.Uri.joinPath(problemDirUri, 'test');
                 await vscode.workspace.fs.createDirectory(testDirUri);
 
-                const samples = await getSampleCases(contestId, task.problem_index);
+                const dummyProblemFileUri = vscode.Uri.joinPath(problemDirUri, 'main.cpp'); 
+                const problemHtml = await this.atcoderApiService.getOrFetchProblemHtml(task.contest_id, task.problem_id, dummyProblemFileUri.fsPath);
+
+                let samples: SampleCase[] = [];
+                if (problemHtml) {
+                    samples = await this.atcoderApiService.getSampleCases(problemHtml as string);
+                } else {
+                    console.warn(`[ContestSetupService] Failed to fetch problem HTML for ${task.problem_index}. Skipping sample creation.`);
+                }
+
                 console.log(`[ContestSetupService] Fetched ${samples.length} samples for task ${task.problem_index} (${contestId}_${task.problem_index.toLowerCase()})`);
                 if (samples.length === 0) {
                     console.warn(`[ContestSetupService] No samples found for ${task.problem_index}. Skipping file creation.`);
@@ -47,7 +57,6 @@ export class ContestSetupService {
                     await vscode.workspace.fs.writeFile(outFileUri, Buffer.from(sample.output, 'utf8'));
                 }
 
-                // テンプレートファイルをコピー
                 await this.copyTemplateFile(problemDirUri);
             }
 
@@ -65,7 +74,7 @@ export class ContestSetupService {
                 const sourceUri = vscode.Uri.file(templatePath);
                 const fileName = path.basename(templatePath);
                 const destUri = vscode.Uri.joinPath(problemDirUri, fileName);
-                await vscode.workspace.fs.copy(sourceUri, destUri, { overwrite: false });
+                await vscode.workspace.fs.copy(sourceUri, destUri, { overwrite: true });
             } catch (error) {
                 vscode.window.showWarningMessage(`テンプレートファイルのコピーに失敗しました: ${templatePath}`);
                 console.error('Template copy error:', error);
